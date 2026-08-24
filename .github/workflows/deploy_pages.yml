@@ -1,0 +1,36 @@
+# ============================================================
+# 仅部署大屏（不跑管线）：用仓库中现有的 frontend/data/*.json
+# 手动触发 → 约 1 分钟上线。
+# 前置：Settings → Pages → Source 选 "GitHub Actions"
+# ============================================================
+name: 部署大屏
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Pages
+        uses: actions/configure-pages@v5
+
+      - name: 上传 frontend/ 为 Pages 产物
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend
+
+      - name: 部署
+        id: deployment
+        uses: actions/deploy-pages@v4
