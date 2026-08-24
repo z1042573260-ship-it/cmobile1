@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(venv/Scripts/python.exe -X utf8 -c \"import openpyxl; print\\('openpyxl version:', openpyxl.__version__\\)\")",
+      "Bash(venv/Scripts/python.exe -X utf8 scripts/test_spider.py yantai_bidding)",
+      "Bash(venv/Scripts/python.exe -X utf8 scripts/review_data.py \"data/spider_test/yantai_bidding_20260722_154752.json\" --export-excel)"
+    ]
+  }
+}

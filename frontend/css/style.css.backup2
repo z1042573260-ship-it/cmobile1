@@ -1,0 +1,330 @@
+@charset "utf-8";
+/* CSS Document */
+*{
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box}
+*,body{padding:0px;	margin:0px;font-family: "微软雅黑";}
+body{color:#fff;font-size: 16px; background: #033c76 url(../images/bg.png) no-repeat; background-size: 100% 100%;
+}
+@font-face{font-family:electronicFont;src:url(../font/DS-DIGIT.TTF)}
+html,body{min-height: 100%;}
+li{ list-style-type:none;}
+table{}
+i{ margin:0px; padding:0px; text-indent:0px;}
+img{ border:none; max-width: 100%;}
+a{ text-decoration:none; color:#fff;}
+a.active,a:focus{ outline:none!important; text-decoration:none;}
+ol,ul,p,h1,h2,h3,h4,h5,h6{ padding:0; margin:0}
+a:hover{ color:#06c; text-decoration: none!important}
+.clearfix:after, .clearfix:before {display: table;content: " "}
+ .clearfix:after {clear: both}
+.pulll_left{float:left;}
+.pulll_right{float:right;}
+i{font-style: normal;}
+.text-w{color: #ffe400}
+.text-d{color: #ff6316}
+.text-s{color: #14e144}
+.text-b{color: #07e5ff}
+
+/* ---------------- 顶部 Header 整体布局 ---------------- */
+.head {
+    position: relative;
+    height: 80px;
+    margin: 0 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    box-sizing: border-box;
+}
+
+/* 矢量背景置底，不阻挡按钮点击 */
+.head-bg-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* ---------------- 左右导航区域 ---------------- */
+.head-nav {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    width: 33%;
+    margin-top: 12px;
+}
+.head-nav.nav-left { justify-content: flex-start;left: 270px;}
+.head-nav.nav-right { justify-content: flex-end;right: 150px;}
+
+.head-nav ul {
+    display: flex;
+    gap: 12px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* ---------------- 胶囊状发光按钮 ---------------- */
+.head-nav ul li a {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    padding: 0 16px;
+    font-size: 14px;
+    color: #a2d8ff;
+    font-weight: 500;
+    text-decoration: none;
+    background: linear-gradient(180deg, rgba(6, 40, 85, 0.8) 0%, rgba(2, 20, 50, 0.9) 100%);
+    border: 1px solid rgba(0, 180, 255, 0.5);
+    border-radius: 16px;
+    box-shadow: inset 0 0 10px rgba(0, 140, 255, 0.3), 0 2px 6px rgba(0,0,0,0.4);
+    transition: all 0.25s ease;
+    white-space: nowrap;
+}
+
+/* 按钮内部发光饰点 (· 按钮名称 ·) */
+.head-nav ul li a i {
+    display: inline-block;
+    width: 3px;
+    height: 3px;
+    background: #00d2ff;
+    border-radius: 50%;
+    margin: 0 6px;
+    opacity: 0.6;
+    box-shadow: 0 0 4px #00d2ff;
+}
+
+/* 按钮 Hover 与选中激活态 */
+.head-nav ul li.active a,
+.head-nav ul li a:hover {
+    color: #ffffff;
+    background: linear-gradient(180deg, rgba(0, 150, 255, 0.6) 0%, rgba(0, 80, 200, 0.8) 100%);
+    border-color: #00f2fe;
+    box-shadow: inset 0 0 12px rgba(0, 242, 254, 0.8), 0 0 12px rgba(0, 242, 254, 0.6);
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.9);
+}
+
+.head-nav ul li.active a i,
+.head-nav ul li a:hover i {
+    opacity: 1;
+    background: #ffffff;
+    box-shadow: 0 0 6px #ffffff;
+}
+
+/* ---------------- 中间主标题与副标题 ---------------- */
+.head-title {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    width: 34%;
+    margin-top: -10px;
+}
+
+.head-title h1 {
+    font-size: 24px !important;
+    font-weight: 800;
+    letter-spacing: 2px;
+    line-height: 30px;
+    margin: 0;
+    background: linear-gradient(180deg, #ffffff 20%, #a6f0ff 70%, #3ca9ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 8px rgba(0, 242, 254, 0.5));
+}
+
+.head-title .subtitle {
+    font-size: 9px;
+    color: #5ea8db;
+    letter-spacing: 1px;
+    margin-top: 1px;
+    font-family: Arial, sans-serif;
+    text-transform: uppercase;
+    opacity: 0.85;
+}
+
+/* ---------------- 右侧时间 ---------------- */
+.head .time {
+    margin-left: 15px;
+    font-size: 14px;
+    color: #00f2fe;
+    font-family: electronicFont, sans-serif;
+    white-space: nowrap;
+    text-shadow: 0 0 6px rgba(0, 242, 254, 0.6);
+}
+
+/* ---------------- 三角阵列呼吸动画 ---------------- */
+.tech-triangles {
+    animation: tri-pulse 2s infinite alternate ease-in-out;
+}
+
+@keyframes tri-pulse {
+    0% {
+        opacity: 0.6;
+        filter: drop-shadow(0 0 2px rgba(0, 242, 254, 0.4));
+    }
+    100% {
+        opacity: 1;
+        filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.9));
+    }
+}
+
+.mainbox{padding: 0px 10px;}
+.nav1{display: flex; flex-wrap: nowrap; margin-left: -6px; margin-right:-6px;}
+.nav1>li{padding:0 6px; float: none; display: flex; flex-direction: column;}
+.nav1>li>.box:last-child{margin-bottom: 0; margin-top: auto;}
+
+/* ---------------- 卡片外框与四角发光包角 ---------------- */
+.box {
+    position: relative;
+    background: linear-gradient(135deg, rgba(6, 26, 62, 0.8) 0%, rgba(2, 15, 38, 0.9) 100%) !important;
+    border: 1px solid rgba(0, 222, 255, 0.35) !important;
+    box-shadow: inset 0 0 15px rgba(0, 180, 255, 0.2), 0 8px 20px rgba(0, 0, 0, 0.5) !important;
+    border-radius: 2px;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+}
+.box:hover {
+    border-color: rgba(0, 222, 255, 0.65) !important;
+    box-shadow: inset 0 0 25px rgba(0, 180, 255, 0.35), 0 10px 25px rgba(0, 0, 0, 0.7) !important;
+}
+/* 顶部两个 L 型金属发光包角 */
+.box::before, .box::after {
+    content: "";
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-color: #00f2fe;
+    border-style: solid;
+    pointer-events: none;
+    z-index: 5;
+    box-shadow: 0 0 6px #00f2fe;
+}
+.box::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+.box::after { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+/* 底部两个 L 型金属发光包角 */
+.box .boxnav::before, .box .boxnav::after {
+    content: "";
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-color: #00f2fe;
+    border-style: solid;
+    pointer-events: none;
+    z-index: 5;
+    box-shadow: 0 0 6px #00f2fe;
+}
+.box .boxnav::before { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+.box .boxnav::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+/* ---------------- 模块卡片小标题 ---------------- */
+.tit {
+    position: relative;
+    height: 38px;
+    line-height: 38px;
+    padding-left: 32px !important;
+    font-size: 15px !important;
+    font-weight: 600;
+    color: #ffffff !important;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, rgba(0, 222, 255, 0.25) 0%, rgba(0, 114, 255, 0.05) 70%, transparent 100%) !important;
+    border-bottom: 1px solid rgba(0, 222, 255, 0.25) !important;
+    text-shadow: 0 0 8px rgba(0, 242, 254, 0.6);
+}
+/* 标题左侧呼吸动画光点 */
+.tit::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: 15px;
+    width: 8px;
+    height: 8px;
+    background: #00f2fe;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #00f2fe, 0 0 3px #fff;
+    animation: pulse-glow 2s infinite alternate;
+}
+/* 标题下方的霓虹蓝短横线 */
+.tit::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: 80px;
+    height: 2px;
+    background: #00f2fe;
+    box-shadow: 0 0 8px #00f2fe;
+}
+/* tit01 保留原有光点样式 */
+.tit01:before{position: absolute; content: ""; width: 6px; height: 6px; background: rgba(22,214,255,.9);box-shadow: 0 0 5px rgba(22,214,255,.9); border-radius: 10px; left: 10px; top: 18px;}
+
+.boxnav{padding: 10px;}
+.tit01{font-size: 16px; font-weight: 500; position: relative; padding-left: 15px;}
+.tit01:before{ left: 3px; top: 8px;}
+
+.mapc{background: url(../images/bg3.png) no-repeat center center; background-size: 100% 100%}
+.map{position: relative; height: 100%;}
+.map img{}
+.mapnav{position: absolute;z-index: 10;}
+
+
+.yqlist li{float: left; width: 50%; padding:10px 0; text-align: center;}
+.yq{width:100px; height: 100px; margin: 0 auto  5px auto;  position: relative; display: flex; justify-content: center;align-items: center; font-size: 30px;font-family:electronicFont;color: #fff32b;}
+.yqlist li span{opacity: .6; font-size: 14px;}
+
+.yq:before{position: absolute; width: 100%; height: 100%; content: ""; background: url(../images/img1.png) center center; border-radius: 50%; background-size: 100% 100%; border: 2px solid rgba(7,229,255,.5); opacity:.6;
+	left:0; top: 0; animation: myfirst2 15s infinite linear;}
+
+.yq:after{position: absolute; width: 86%; background: url(../images/img2.png) center center; border-radius: 50%; background-size: 100% 100%; border: 2px solid rgba(7,229,255,.4); opacity:.5;
+	height: 86%; content: "";   left:7%; top: 7%; animation: myfirst 15s infinite linear;}
+
+
+@keyframes myfirst
+{
+to { transform: rotate(-360deg)}
+}
+@keyframes myfirst2
+{
+to { transform: rotate(360deg)}
+}
+
+
+
+
+/* 卡片圆圈颜色变体 — CSS filter 给背景图 + border 统一着色 */
+.yq.yq-cyan:before, .yq.yq-cyan:after   { filter: hue-rotate(0deg); }                    /* 原色(默认青) */
+.yq.yq-red:before, .yq.yq-red:after     { filter: hue-rotate(140deg) saturate(2); }       /* 青→红 */
+.yq.yq-yellow:before, .yq.yq-yellow:after { filter: hue-rotate(35deg) saturate(2) brightness(1.3); } /* 青→黄 */
+.yq.yq-green:before, .yq.yq-green:after { filter: hue-rotate(70deg) saturate(1.8) brightness(1.1); }  /* 青→绿 */
+
+/* AI 实时抓取日志 — 跑马灯 */
+.marquee-wrap{ height: 100%; display: flex; flex-direction: column; }
+.marquee-header{ display: flex; align-items: center; padding: 0 12px 6px 12px; border-bottom: 1px solid rgba(7,229,255,.15); }
+.live-dot{ width: 8px; height: 8px; background: #00ff66; border-radius: 50%; margin-right: 8px;
+    box-shadow: 0 0 8px #00ff66; animation: blink 1.5s infinite; flex-shrink: 0; }
+@keyframes blink{ 0%,100%{ opacity: 1; } 50%{ opacity: 0.3; } }
+/* 标题呼吸灯缩放闪烁 */
+@keyframes pulse-glow {
+    0% { opacity: 0.4; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1.2); }
+}
+.marquee-tag{ color: #00deff; font-size: 12px; font-weight: bold; white-space: nowrap; }
+.marquee-content{ flex: 1; overflow: hidden; position: relative; margin-top: 4px; }
+.marquee-list{ list-style: none; padding: 0; margin: 0; transition: transform 0.5s ease; }
+.marquee-list li{ height: 32px; line-height: 32px; font-size: 12px; color: rgba(255,255,255,.85);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 12px; cursor: default; }
+.marquee-list li:hover{ background: rgba(7,229,255,.08); }
+.marquee-list .mq-time{ color: rgba(255,255,255,.45); margin-right: 8px; font-size: 11px; }
+.marquee-list .tag{ display: inline-block; padding: 1px 6px; border-radius: 2px; font-size: 10px;
+    margin-right: 6px; line-height: 1.5; vertical-align: middle; }
+.marquee-list .tag.red{ background: rgba(255,56,92,.25); color: #ff385c; border: 1px solid rgba(255,56,92,.4); }
+.marquee-list .tag.yellow{ background: rgba(254,240,0,.18); color: #fef000; border: 1px solid rgba(254,240,0,.35); }
+.marquee-list .tag.green{ background: rgba(0,255,102,.18); color: #00ff66; border: 1px solid rgba(0,255,102,.35); }
+.marquee-list .tag.blue{ background: rgba(0,222,255,.18); color: #00deff; border: 1px solid rgba(0,222,255,.35); }
+.marquee-list .mq-district{ color: #ff9f7f; margin-right: 4px; }

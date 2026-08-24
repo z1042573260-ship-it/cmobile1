@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}{{ project.project_name[:30] }} - 详情{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+
+    <!-- 返回 + 标题 -->
+    <div class="mb-3">
+        <a href="{{ url_for('projects.list_projects') }}" class="btn btn-sm btn-outline-secondary mb-2">
+            <i class="bi bi-arrow-left"></i> 返回列表
+        </a>
+        <h4>{{ project.project_name }}</h4>
+    </div>
+
+    <div class="row g-3">
+        <!-- 左侧：基本信息 -->
+        <div class="col-lg-8">
+            <div class="table-card mb-3">
+                <div class="card-header">📋 项目信息</div>
+                <div class="p-3">
+                    <table class="table table-bordered" style="font-size:13px;">
+                        <tbody>
+                            <tr>
+                                <td class="bg-light" style="width:120px; font-weight:600;">项目名称</td>
+                                <td>{{ project.project_name }}</td>
+                            </tr>
+                            <tr>
+                                <td class="bg-light" style="font-weight:600;">工程类型</td>
+                                <td>{{ project.project_type or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="bg-light" style="font-weight:600;">所属区县</td>
+                                <td><span class="badge bg-primary">{{ project.district or '-' }}</span></td>
+                            </tr>
+                            <tr>
+                                <td class="bg-light" style="font-weight:600;">详细地址</td>
+                                <td>{{ project.location or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="bg-light" style="font-weight:600;">建设规模</td>
+                                <td>{{ project.scale or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="bg-light" style="font-weight:600;">投资金额</td>
+                                <td>{{ project.investment or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="bg-light" style="font-weight:600;">建设单位</td>
+                                <td>{{ project.developer or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="bg-light" style="font-weight:600;">联系人</td>
+                                <td>{{ project.contact_person or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="bg-light" style="font-weight:600;">联系电话</td>
+                                <td>{{ project.contact_phone or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="bg-light" style="font-weight:600;">发布日期</td>
+                                <td>{{ project.publish_date or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="bg-light" style="font-weight:600;">截止日期</td>
+                                <td>{{ project.deadline or '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="bg-light" style="font-weight:600;">数据来源</td>
+                                <td>
+                                    {% if project.source_url %}
+                                    <a href="{{ project.source_url }}" target="_blank">{{ project.source_name }}</a>
+                                    {% else %}
+                                    {{ project.source_name or '-' }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧：AI 分析 + 状态 -->
+        <div class="col-lg-4">
+            <!-- AI 分析卡片 -->
+            <div class="table-card mb-3">
+                <div class="card-header">🤖 AI 分析结果</div>
+                <div class="p-3">
+                    <div class="mb-2">
+                        <span class="text-muted" style="font-size:12px;">基站需求评估：</span>
+                        <span class="badge-status {{ project.need_base_station }} ms-2">
+                            {{ project.need_base_station or '未评估' }}
+                        </span>
+                    </div>
+                    <div class="mb-2">
+                        <span class="text-muted" style="font-size:12px;">优先级打分：</span>
+                        <span class="badge-priority p{{ project.priority }} ms-2" style="font-size:14px;">
+                            {{ '★' * project.priority }}
+                        </span>
+                    </div>
+                    {% if project.ai_reason %}
+                    <div class="mb-0" style="font-size:12px; color:#666; background:#f8f9fa; padding:8px; border-radius:6px;">
+                        <strong>判断依据：</strong><br>{{ project.ai_reason }}
+                    </div>
+                    {% endif %}
+                    {% if project.ai_summary %}
+                    <div class="mt-2" style="font-size:12px; color:#666;">
+                        <strong>AI 摘要：</strong>{{ project.ai_summary }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 跟进状态卡片 -->
+            <div class="table-card mb-3">
+                <div class="card-header">📌 跟进状态</div>
+                <div class="p-3">
+                    <div class="mb-3">
+                        <label class="form-label" style="font-size:12px; color:#666;">当前状态</label>
+                        <div>
+                            <span class="badge-status {{ project.status }}" style="font-size:14px;">
+                                {{ project.status }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label" style="font-size:12px; color:#666;">更新状态</label>
+                        <select class="form-select form-select-sm" id="statusSelect">
+                            <option value="新发现" {{ 'selected' if project.status == '新发现' }}>新发现</option>
+                            <option value="跟进中" {{ 'selected' if project.status == '跟进中' }}>跟进中</option>
+                            <option value="已签约" {{ 'selected' if project.status == '已签约' }}>已签约</option>
+                            <option value="已丢失" {{ 'selected' if project.status == '已丢失' }}>已丢失</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <textarea class="form-control form-control-sm" id="notesInput"
+                                  placeholder="添加跟进备注..." rows="3">{{ project.notes or '' }}</textarea>
+                    </div>
+                    <button class="btn btn-primary btn-sm w-100" onclick="updateStatus()">
+                        <i class="bi bi-check2"></i> 更新状态
+                    </button>
+                </div>
+            </div>
+
+            <!-- 通知状态 -->
+            <div class="table-card">
+                <div class="card-header">📧 通知状态</div>
+                <div class="p-3">
+                    <div style="font-size:28px; text-align:center;">
+                        {% if project.notified %}
+                        <span style="color:#0f9d58;">✅</span>
+                        <p style="font-size:13px; color:#666; margin:0;">
+                            已于 {{ project.notified_at.strftime('%Y-%m-%d %H:%M') if project.notified_at else '之前' }} 通知
+                        </p>
+                        {% else %}
+                        <span style="color:#ccc;">⬜</span>
+                        <p style="font-size:13px; color:#666; margin:0;">尚未邮件通知</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function updateStatus() {
+    var status = document.getElementById('statusSelect').value;
+    var notes = document.getElementById('notesInput').value;
+
+    fetch("{{ url_for('projects.update_status', project_id=project.id) }}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            status: status,
+            notes: notes
+        })
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('更新失败: ' + (data.message || '未知错误'));
+        }
+    })
+    .catch(function(err) {
+        alert('网络错误: ' + err);
+    });
+}
+</script>
+{% endblock %}

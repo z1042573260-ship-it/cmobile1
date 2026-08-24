@@ -1,0 +1,57 @@
+# ============================================================
+# 每周自动化管线：爬虫 → 汇总 → AI分析 → 坐标补全 → 入库 TiDB
+#                    → 导出大屏 JSON → 提交仓库（触发 Pages 自动部署）→ 周报邮件
+#
+# 触发：北京时间每周一 09:15（UTC 周一 01:15）+ 手动触发
+# 前置：仓库 Settings → Secrets and variables → Actions 配置：
+#   TIDB_DATABASE_URL  完整 TiDB 连接串（含密码，ssl_ca=config/tidb_ca.pem 相对路径）
+#   ZHIPU_API_KEY      智谱 GLM API Key（glm-4-flash 免费）
+#   XFYUN_API_KEY / XFYUN_API_SECRET  讯飞星火（坐标搜索补全）
+#   EMAIL_PASSWORD     QQ 邮箱授权码（周报邮件；不配则跳过发信）
+# ============================================================
+name: 每周自动化管线
+
+on:
+  schedule:
+    - cron: '15 1 * * 1'   # UTC 周一 01:15 = 北京周一 09:15
+  workflow_dispatch: {}    # 仓库 Actions 页可手动触发
+
+permissions:
+  contents: write          # 允许提交导出数据回仓库（触发 Pages 重新部署）
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240   # 智谱限流 ~1请求/分钟，全量分析约 50 分钟，总时长 ~1.5h
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 安装依赖
+        run: pip install --quiet pymysql requests beautifulsoup4 lxml sqlalchemy pandas openpyxl loguru schedule python-dotenv flask flask-sqlalchemy
+
+      - name: 运行完整管线（爬虫→AI→坐标→入库→导出→邮件）
+        env:
+          TIDB_DATABASE_URL: ${{ secrets.TIDB_DATABASE_URL }}
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+          XFYUN_API_KEY: ${{ secrets.XFYUN_API_KEY }}
+          XFYUN_API_SECRET: ${{ secrets.XFYUN_API_SECRET }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+        run: python crawler/scheduler.py
+
+      - name: 提交导出数据（触发 GitHub Pages 自动重新部署）
+        run: |
+          git config user.name "pipeline-bot"
+          git config user.email "actions@github.com"
+          git add frontend/data/dashboard_data.json frontend/data/report_data.json frontend/data/workbuddy.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(data): 自动更新大屏数据 $(date +'%Y-%m-%d %H:%M')"
+            git push
+          else
+            echo "数据无变化，跳过提交"
+          fi

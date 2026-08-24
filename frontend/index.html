@@ -1,0 +1,449 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>工程建设信息自动化预警平台</title>
+<script type="text/javascript" src="js/jquery.js"></script>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://unpkg.com/gsap@3.12.2/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js"></script>
+<script type="importmap">
+{
+	"imports": {
+		"three": "https://unpkg.com/three@0.161.0/build/three.module.js",
+		"three/addons/": "https://unpkg.com/three@0.161.0/examples/jsm/"
+	}
+}
+</script>
+<script type="text/javascript" src="js/echarts.min.js"></script>
+<script type="text/javascript" src="js/gaode-tiles.js"></script>
+<script type="text/javascript" src="js/district-centers.js"></script>
+<script type="module" src="js/map.js"></script>
+<script type="text/javascript" src="js/js.js"></script>
+<script type="text/javascript" src="js/gaode-map-2d.js"></script>
+</head>
+<body>
+	<div class="head">
+		<!-- 矢量科技背景层（带空间延伸光轨与发光托盘） -->
+		<div class="head-bg-svg">
+			<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 1920 80" preserveAspectRatio="none">
+				<defs>
+					<!-- 1. 强霓虹发光滤镜 -->
+					<filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+						<feGaussianBlur stdDeviation="3" result="blur" />
+						<feComposite in="SourceGraphic" in2="blur" operator="over" />
+					</filter>
+
+					<!-- 2. 向左延伸渐变（亮青 -> 虚化透明） -->
+					<linearGradient id="fade-left" x1="100%" y1="0%" x2="0%" y2="0%">
+						<stop offset="0%" stop-color="#00f2fe" stop-opacity="0.9"/>
+						<stop offset="50%" stop-color="#0096ff" stop-opacity="0.4"/>
+						<stop offset="100%" stop-color="#00f2fe" stop-opacity="0"/>
+					</linearGradient>
+
+					<!-- 3. 向右延伸渐变（亮青 -> 虚化透明） -->
+					<linearGradient id="fade-right" x1="0%" y1="0%" x2="100%" y2="0%">
+						<stop offset="0%" stop-color="#00f2fe" stop-opacity="0.9"/>
+						<stop offset="50%" stop-color="#0096ff" stop-opacity="0.4"/>
+						<stop offset="100%" stop-color="#00f2fe" stop-opacity="0"/>
+					</linearGradient>
+
+					<!-- 4. 中台下沉托盘渐变填充 -->
+					<linearGradient id="plate-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+						<stop offset="0%" stop-color="#00f2fe" stop-opacity="0.6"/>
+						<stop offset="100%" stop-color="#00f2fe" stop-opacity="0"/>
+					</linearGradient>
+				</defs>
+
+				<!-- 1. 顶部暗色遮罩底版（圆角下凹路径） -->
+				<path d="M 0 0 L 1920 0 L 1920 10 L 1330 10 C 1290 10 1290 68 1250 68 L 670 68 C 630 68 630 10 590 10 L 0 10 Z" fill="rgba(3, 22, 52, 0.25)"/>
+				
+				<!-- 2. 贯穿两侧的主框架线（S 型圆角平滑滑落） -->
+				<path d="M 0 10 L 590 10 C 630 10 630 68 670 68 L 1250 68 C 1290 68 1290 10 1330 10 L 1920 10" fill="none" stroke="rgba(0, 180, 255, 0.18)" stroke-width="1"/>
+
+				<!-- 3. 【延伸空间核心】标题底座半透明发光托盘 -->
+				<polygon points="675,68 1245,68 1225,75 695,75" fill="url(#plate-grad)"/>
+
+				<!-- 4. 中间主发光霓虹线（最亮核心段） -->
+				<path d="M 670 68 L 1250 68" fill="none" stroke="#00f2fe" stroke-width="3.5" filter="url(#glow)"/>
+
+				<!-- 5. 【延伸空间核心】向左右两侧无限延伸并渐隐的光束线 -->
+				<path d="M 670 72 L 400 72 C 250 72 150 40 0 20" fill="none" stroke="url(#fade-left)" stroke-width="1.5"/>
+				<path d="M 1250 72 L 1520 72 C 1670 72 1770 40 1920 20" fill="none" stroke="url(#fade-right)" stroke-width="1.5"/>
+
+				<!-- 6. 【延伸空间核心】底层舒展的第二道精细光轨 -->
+				<path d="M 650 68 C 520 78 300 50 100 15" fill="none" stroke="url(#fade-left)" stroke-width="1" opacity="0.6"/>
+				<path d="M 1270 68 C 1400 78 1620 50 1820 15" fill="none" stroke="url(#fade-right)" stroke-width="1" opacity="0.6"/>
+
+				<!-- 7. 弧形下滑入口处的节点星光 -->
+				<circle cx="590" cy="10" r="3" fill="#00f2fe" filter="url(#glow)"/>
+				<circle cx="1330" cy="10" r="3" fill="#00f2fe" filter="url(#glow)"/>
+
+				<!-- 8. 标题左右两侧的三重发光三角阵列 -->
+				<g class="tech-triangles">
+					<polygon points="635,38 642,33 642,43" fill="#00f2fe" opacity="0.3"/>
+					<polygon points="645,38 652,33 652,43" fill="#00f2fe" opacity="0.6"/>
+					<polygon points="655,38 662,33 662,43" fill="#00f2fe" opacity="1" filter="url(#glow)"/>
+				</g>
+				<g class="tech-triangles">
+					<polygon points="1285,38 1278,33 1278,43" fill="#00f2fe" opacity="0.3"/>
+					<polygon points="1275,38 1268,33 1268,43" fill="#00f2fe" opacity="0.6"/>
+					<polygon points="1265,38 1258,33 1258,43" fill="#00f2fe" opacity="1" filter="url(#glow)"/>
+				</g>
+
+				<!-- 9. 顶部双斜杠装饰线 -->
+				<line x1="565" y1="3" x2="575" y2="13" stroke="#00f2fe" stroke-width="2" opacity="0.7"/>
+				<line x1="573" y1="3" x2="583" y2="13" stroke="#00f2fe" stroke-width="2" opacity="0.9"/>
+				<line x1="1337" y1="3" x2="1347" y2="13" stroke="#00f2fe" stroke-width="2" opacity="0.9"/>
+				<line x1="1345" y1="3" x2="1355" y2="13" stroke="#00f2fe" stroke-width="2" opacity="0.7"/>
+			</svg>
+		</div>
+
+		<!-- 左侧导航：周期切换（分两侧对称排版：左 本周/本月，右 今年 + 时间） -->
+		<div class="head-nav nav-left">
+			<div class="mq-date-group head-mq-date">
+				<button class="mq-pg-btn mq-date is-active" data-d="week">本周</button>
+				<button class="mq-pg-btn mq-date" data-d="month">本月</button>
+			</div>
+		</div>
+
+		<!-- 中间标题区域 -->
+		<div class="head-title">
+			<h1>工程建设信息自动化预警平台</h1>
+			<div class="subtitle">ENGINEERING CONSTRUCTION AUTOMATED WARNING PLATFORM</div>
+		</div>
+
+		<!-- 右侧导航：今年 + 时间（全市地图按钮由 three-map.js 插入其左侧；时间定宽，不推按钮） -->
+		<div class="head-nav nav-right">
+			<div class="mq-date-group head-mq-date">
+				<button class="mq-pg-btn mq-date" data-d="year">今年</button>
+			</div>
+			<div class="time" id="showTime">2026/7/27 12:00:00</div>
+		</div>
+	</div>
+	<div class="mainbox">
+
+	<ul class="clearfix nav1">
+		<!-- 左导航栏 -->
+		<li style="width: 470px; flex: 0 0 470px;margin-top: 30px;">
+		<div class="box">
+			<div class="tit">预警实时统计</div>
+			<div class="boxnav" style="height: 220px;">
+<div class="yqlist">
+            <ul class="clearfix">
+                              
+                              <li>
+                <div class="yq yq-red" id="statRed" style="color:#ff4444;">--</div>
+                <span >红色预警</span></li>
+                              <li>
+                <div class="yq yq-yellow" id="statYellow" style="color:#ffcc00;">--</div>
+                <span>黄色预警</span></li>
+                              <li>
+                <div class="yq yq-green" id="statDistricts">--</div>
+                <span>项目总数</span></li>
+                            </ul>
+          </div>
+			</div>
+			</div>
+			<div class="box">
+			<div class="tit">区县预警数据</div>
+			<div class="boxnav" style="height: 220px;" id="echart2"></div>
+			</div>
+			<div class="box">
+			<div class="tit">预警时间趋势</div>
+			<div class="boxnav" style="height: 220px;" id="echart3"></div>
+			</div>
+		</li>
+		<!-- 50% -->
+		<li style="flex: 1;">
+
+		<div>
+			<div class="boxnav mapc" style="height: 680px; position: relative">
+			<div class="map" id="map"></div>
+			<div class="map" id="map2d" style="display:none"></div>
+			</div>
+			</div>
+		</li>
+		<!-- 右导航栏 -->
+		<li style="width: 470px; flex: 0 0 470px;margin-top: 30px;">
+<div class="box">
+			<div class="tit">抓取日志<span class="tit-live"><span class="live-dot"></span>实时监控中</span></div>
+			<button class="mq-pg-btn mq-all" id="mqAll">全部</button>
+			<div class="boxnav" style="height: 220px; position: relative;">
+				<div class="marquee-wrap">
+					<div class="marquee-content" id="marqueeRed">
+						<ul class="marquee-list"></ul>
+					</div>
+					<div class="mq-pager">
+						<button class="mq-pg-btn" id="mqPrev">‹ 上一页</button>
+						<span class="mq-page" id="mqPage">1/1</span>
+						<button class="mq-pg-btn" id="mqNext">下一页 ›</button>
+					</div>
+				</div>
+			</div>
+			</div>
+			<div class="box">
+			<div class="tit">项目类型</div>
+			<button class="mq-pg-btn mq-all" id="mqAllType">全部</button>
+			<div class="boxnav" style="height: 220px;" id="echart5" >
+
+
+
+			</div>
+			</div>
+		<div class="box">
+			<div class="tit">项目阶段分布</div>
+			<div class="boxnav" style="height: 220px;" id="echart6">
+
+
+
+			</div>
+			</div>
+		</li>
+		</ul>
+
+
+
+		<script>
+var t = null;
+    t = setTimeout(time,1000);
+    function time()
+    {
+       clearTimeout(t);
+       dt = new Date();
+		var y=dt.getFullYear();
+		var mt=dt.getMonth()+1;
+		var day=dt.getDate();
+       var h=dt.getHours();
+       var m=dt.getMinutes();
+       var s=dt.getSeconds();
+       document.getElementById("showTime").innerHTML = y+"/"+mt+"/"+day+" "+h+":"+m+":"+s+"";
+       t = setTimeout(time,1000);
+    }
+
+</script>
+	</div>
+
+<!-- 底部托盘 -->
+<div class="bottom-tray">
+
+  <!-- 左侧 SVG 流光线 -->
+  <div class="bottom-svg-line bottom-svg-line-left">
+    <svg width="721" height="57" viewBox="0 0 721 57" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="glow-left" cx="50%" cy="50%" fx="100%" fy="50%" r="50%">
+          <stop offset="0%" stop-color="#fff" stop-opacity="1"/>
+          <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <mask id="mask-left">
+          <circle r="50" cx="0" cy="0" fill="url(#glow-left)">
+            <animateMotion dur="3s" repeatCount="indefinite"
+              path="M1 56.6105C1 31.5123 185.586 10.0503 451.904 1.35519C458.942 1.12543 465.781 4.00883 470.505 9.22964L484.991 25.2383C487.971 28.4775 492.938 30.4201 498.254 30.4201H720.142"
+              keyPoints="0;1" keyTimes="0;1" rotate="auto"/>
+          </circle>
+        </mask>
+      </defs>
+      <path d="M1 56.6105C1 31.5123 185.586 10.0503 451.904 1.35519C458.942 1.12543 465.781 4.00883 470.505 9.22964L484.991 25.2383C487.971 28.4775 492.938 30.4201 498.254 30.4201H720.142"
+        stroke="#30DCFF" stroke-width="2" mask="url(#mask-left)" style="mix-blend-mode:screen"/>
+    </svg>
+  </div>
+
+  <!-- 左箭头 -->
+  <div class="bottom-tray-arrow">
+    <img src="images/bottom-menu-arrow-big.svg" alt=""/>
+    <img src="images/bottom-menu-arrow-small.svg" alt=""/>
+  </div>
+
+  <!-- 底部菜单按钮 -->
+  <div class="bottom-menu">
+    <div class="bottom-menu-item is-active"><span>柱状图</span></div>
+    <div class="bottom-menu-item"><span>预警图</span></div>
+  </div>
+
+  <!-- 右箭头（镜像） -->
+  <div class="bottom-tray-arrow is-reverse">
+    <img src="images/bottom-menu-arrow-big.svg" alt=""/>
+    <img src="images/bottom-menu-arrow-small.svg" alt=""/>
+  </div>
+
+  <!-- 右侧 SVG 流光线（镜像） -->
+  <div class="bottom-svg-line bottom-svg-line-right">
+    <svg width="721" height="57" viewBox="0 0 721 57" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="glow-right" cx="50%" cy="50%" fx="100%" fy="50%" r="50%">
+          <stop offset="0%" stop-color="#fff" stop-opacity="1"/>
+          <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <mask id="mask-right">
+          <circle r="50" cx="0" cy="0" fill="url(#glow-right)">
+            <animateMotion dur="3s" repeatCount="indefinite"
+              path="M1 56.6105C1 31.5123 185.586 10.0503 451.904 1.35519C458.942 1.12543 465.781 4.00883 470.505 9.22964L484.991 25.2383C487.971 28.4775 492.938 30.4201 498.254 30.4201H720.142"
+              keyPoints="0;1" keyTimes="0;1" rotate="auto"/>
+          </circle>
+        </mask>
+      </defs>
+      <path d="M1 56.6105C1 31.5123 185.586 10.0503 451.904 1.35519C458.942 1.12543 465.781 4.00883 470.505 9.22964L484.991 25.2383C487.971 28.4775 492.938 30.4201 498.254 30.4201H720.142"
+        stroke="#30DCFF" stroke-width="2" mask="url(#mask-right)" style="mix-blend-mode:screen"/>
+    </svg>
+  </div>
+
+</div>
+
+<script>
+// ====== 加载大屏数据 → 更新统计卡片 + 初始化地图和图表 ======
+(function() {
+    function updateStats(data) {
+        var s = data.summary;
+        document.getElementById("statRed").textContent = s.red_warning;
+        document.getElementById("statYellow").textContent = s.yellow_warning;
+        document.getElementById("statDistricts").textContent = s.district_count;
+    }
+    function onDataReady(data) {
+        // data 为 null 时 getData() 返回完整兜底数据
+        window.DASHBOARD_DATA = data;
+        updateStats(getData());
+        initAllCharts();
+    }
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", "data/dashboard_data.json", true);
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                onDataReady(JSON.parse(xhr.responseText));
+            } catch(e) {
+                onDataReady(null);
+            }
+        } else {
+            onDataReady(null);
+        }
+    };
+    xhr.onerror = function() { onDataReady(null); };
+    xhr.send();
+    // 加载 AI 分析详情库（workbuddy.json，230 条全字段项目详情；详情卡片展示用，失败静默）
+    // 数据库未导入前：用前 10 条构建预警点（坐标=区县中心+微偏移），覆盖 map_points；导入后去掉这段
+    var xhr2 = new XMLHttpRequest();
+    xhr2.open("GET", "data/workbuddy.json", true);
+    xhr2.onload = function() {
+        if (xhr2.status === 200) {
+            try {
+                var wb = JSON.parse(xhr2.responseText);
+                window.DASHBOARD_WORKBUDDY = Array.isArray(wb) ? wb : Object.values(wb);
+                // 已导入数据库真实坐标：不再用 workbuddy 前10条覆盖 map_points（applyWorkbuddyPoints 函数保留备用）
+            } catch(e) { /* 静默 */ }
+        }
+    };
+    xhr2.onerror = function() { /* 静默 */ };
+    xhr2.send();
+    function applyWorkbuddyPoints(list) {
+        function apply() {
+            if (!window.DASHBOARD_DATA || !window.getDistrictCenter) return false;
+            // 中下列表面板数据：覆盖前保留原始 map_points（dashboard_data.json 13 条）
+            if (!window.DASHBOARD_DATA.map_points_original) {
+                window.DASHBOARD_DATA.map_points_original = (window.DASHBOARD_DATA.map_points || []).slice();
+            }
+            // 区县均衡：每区县取最高优先级 1 条，再按优先级降序取前 10（避免全挤一个区县）
+            var byDistrict = {};
+            list.forEach(function(it) {
+                var cur = byDistrict[it.district];
+                if (!cur || (it.priority || 0) > (cur.priority || 0)) byDistrict[it.district] = it;
+            });
+            var top = Object.keys(byDistrict).map(function(k) { return byDistrict[k]; })
+                .sort(function(a, b) { return (b.priority || 0) - (a.priority || 0); })
+                .slice(0, 10);
+            window.DASHBOARD_DATA.map_points = top.map(function(it, i) {
+                var c = window.getDistrictCenter(it.district);
+                var isRed = /红/.test(it.warning_level || '');
+                // 同区县多条：中心 + 微小偏移错开（避免 3D/2D 去重合并）
+                return {
+                    name: it.project_name,
+                    value: [c[0] + (i % 3) * 0.001, c[1] + Math.floor(i / 3) * 0.001, 4],
+                    district: it.district,
+                    project_type: it.project_type,
+                    stage: it.status,
+                    category: isRed ? 'red' : 'yellow',
+                    warning: it.warning_level || (isRed ? '红色预警' : '黄色预警'),
+                };
+            });
+            return true;
+        }
+        if (!apply()) {
+            // dashboard_data.json 可能尚未加载完，轮询等待
+            var tries = 0;
+            var timer = setInterval(function() {
+                tries++;
+                if (apply() || tries > 20) clearInterval(timer);
+            }, 100);
+        }
+    }
+    // ====== 自动刷新：每 5 分钟检测 dashboard_data.json 更新 → 刷新图表+点位 ======
+    (function() {
+        var lastUpdated = null;
+        function pollDashboard() {
+            var xhr = new XMLHttpRequest();
+            // cache-buster 防浏览器缓存旧文件
+            xhr.open("GET", "data/dashboard_data.json?t=" + Date.now(), true);
+            xhr.onload = function() {
+                if (xhr.status !== 200) return;
+                try {
+                    var nd = JSON.parse(xhr.responseText);
+                    var stamp = (nd.meta && nd.meta.updated_at) || '';
+                    if (stamp && stamp !== lastUpdated) {
+                        lastUpdated = stamp;
+                        if (!window.DASHBOARD_DATA) { window.DASHBOARD_DATA = nd; return; } // 首轮不重复刷新
+                        console.log('[auto-refresh] dashboard_data 更新:', stamp);
+                        window.DASHBOARD_DATA = nd;
+                        if (typeof window.refreshAllCharts === 'function') window.refreshAllCharts();
+                        if (window.yantaiMapChart && typeof window.yantaiMapChart.reloadPoints === 'function') {
+                            window.yantaiMapChart.reloadPoints();
+                        }
+                    }
+                } catch(e) { /* 静默 */ }
+            };
+            xhr.onerror = function() { /* 静默 */ };
+            xhr.send();
+        }
+        // 首轮：记录当前版本；之后每 5 分钟检测
+        setTimeout(function() {
+            var x = new XMLHttpRequest();
+            x.open("GET", "data/dashboard_data.json?t=" + Date.now(), true);
+            x.onload = function() {
+                if (x.status === 200) {
+                    try { lastUpdated = (JSON.parse(x.responseText).meta || {}).updated_at || ''; }
+                    catch(e) {}
+                }
+                setInterval(pollDashboard, 5 * 60 * 1000);
+            };
+            x.onerror = function() { setInterval(pollDashboard, 5 * 60 * 1000); };
+            x.send();
+        }, 1000);
+    })();
+})();
+</script>
+
+<!-- autofit: 1920×1080 设计稿自动缩放（对齐广东大屏） -->
+<script>
+(function() {
+	var dw = 1920, dh = 1080;
+	var el = document.body;
+
+	el.style.width = dw + 'px';
+	el.style.height = dh + 'px';
+	el.style.position = 'absolute';
+	el.style.overflow = 'hidden';
+
+	function keepFit() {
+		// 拉伸填满：X/Y 独立缩放，完整填充视口，无黑边
+		var scaleX = window.innerWidth / dw;
+		var scaleY = window.innerHeight / dh;
+		el.style.transform = 'scale(' + scaleX + ', ' + scaleY + ')';
+		el.style.transformOrigin = '0 0';
+		el.style.left = '0px';
+		el.style.top = '0px';
+	}
+
+	keepFit();
+	window.addEventListener('resize', keepFit);
+})();
+</script>
+</body>
+</html>

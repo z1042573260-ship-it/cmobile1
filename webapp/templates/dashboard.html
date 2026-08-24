@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% block title %}首页看板 - 烟台基站工程情报系统{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+
+    <!-- 概览卡片 -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-icon">🆕</div>
+                <div class="stat-number">{{ stats.new_this_week }}</div>
+                <div class="stat-label">本周新增项目</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-number">{{ stats.high_priority }}</div>
+                <div class="stat-label">高优先级项目 (4-5⭐)</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-icon">🔥</div>
+                <div class="stat-number">{{ stats.urgent }}</div>
+                <div class="stat-label">紧急待跟进</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-number">{{ stats.signed_this_month }}</div>
+                <div class="stat-label">本月已签约</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 地图 + 趋势图 -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-7">
+            <div class="table-card">
+                <div class="card-header">
+                    🗺️ 烟台各区县项目分布热力图
+                    <span style="font-size:12px; font-weight:normal; color:#999;">
+                        颜色越深 = 项目越多
+                    </span>
+                </div>
+                <div class="p-3">
+                    <div id="districtMap" class="map-container"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="table-card">
+                <div class="card-header">📈 近8周新发现项目趋势</div>
+                <div class="p-3">
+                    <div id="weeklyTrend" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 高优先级项目列表 -->
+    <div class="table-card">
+        <div class="card-header">
+            🔔 本周高优先级项目
+            <a href="{{ url_for('projects.list_projects', priority_min=4) }}"
+               class="btn btn-sm btn-outline-primary">
+                查看全部 <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>项目名称</th>
+                        <th>类型</th>
+                        <th>区县</th>
+                        <th>规模</th>
+                        <th>AI 判断</th>
+                        <th>优先级</th>
+                        <th>通知</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if high_priority %}
+                        {% for p in high_priority %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('projects.detail', project_id=p.id) }}"
+                                   style="text-decoration:none; font-weight:500;">
+                                    {{ p.project_name[:40] }}{% if p.project_name|length > 40 %}...{% endif %}
+                                </a>
+                            </td>
+                            <td>{{ p.project_type or '-' }}</td>
+                            <td>{{ p.district or '-' }}</td>
+                            <td>{{ p.scale or '-' }}</td>
+                            <td>
+                                <span class="badge-status {{ p.need_base_station }}">
+                                    {{ p.need_base_station or '-' }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge-priority p{{ p.priority }}">
+                                    {{ '★' * p.priority }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="notify-badge {{ 'yes' if p.notified else 'no' }}">
+                                    {{ '✅ 已通知' if p.notified else '⬜ 未通知' }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge-status {{ p.status }}">{{ p.status }}</span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('projects.detail', project_id=p.id) }}"
+                                   class="btn btn-sm btn-outline-secondary">详情</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">
+                                暂无高优先级项目，等待爬虫采集...
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ===== 烟台区县地图 =====
+(function() {
+    var chartDom = document.getElementById('districtMap');
+    var chart = echarts.init(chartDom);
+
+    var districtData = {{ district_stats | safe }};
+
+    // 加载烟台 GeoJSON 并注册地图
+    fetch('/static/yantai_geojson.json')
+        .then(function(resp) { return resp.json(); })
+        .then(function(geoJson) {
+            echarts.registerMap('yantai', geoJson);
+
+            var option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function(params) {
+                        if (params.value !== undefined && params.value > 0) {
+                            return '<strong>' + params.name + '</strong><br/>项目数量: ' + params.value + ' 条';
+                        }
+                        return '<strong>' + params.name + '</strong><br/>暂无项目';
+                    }
+                },
+                visualMap: {
+                    min: 0,
+                    max: Math.max.apply(null, districtData.map(function(d) { return d.value; }).concat([1])),
+                    text: ['项目多', '项目少'],
+                    inRange: {
+                        color: ['#e8f0fe', '#a8c8fa', '#669df6', '#1a73e8', '#0d47a1']
+                    },
+                    calculable: true,
+                    left: 10,
+                    bottom: 10,
+                    textStyle: { color: '#666', fontSize: 11 }
+                },
+                series: [{
+                    name: '项目数量',
+                    type: 'map',
+                    map: 'yantai',
+                    roam: true,
+                    zoom: 1.1,
+                    center: [120.7, 37.3],
+                    emphasis: {
+                        label: { show: true, fontWeight: 'bold' },
+                        itemStyle: { areaColor: '#ffeb3b' }
+                    },
+                    label: {
+                        show: true,
+                        fontSize: 10,
+                        color: '#333'
+                    },
+                    itemStyle: {
+                        borderColor: '#fff',
+                        borderWidth: 1.5,
+                        areaColor: '#e8f0fe'
+                    },
+                    data: districtData
+                }]
+            };
+
+            chart.setOption(option);
+            window.addEventListener('resize', function() { chart.resize(); });
+        })
+        .catch(function() {
+            // GeoJSON 加载失败时显示提示
+            chartDom.innerHTML = '<div style="text-align:center;padding-top:150px;color:#999;">地图数据加载失败，请检查网络连接</div>';
+        });
+})();
+
+// ===== 周趋势图 =====
+(function() {
+    var chartDom = document.getElementById('weeklyTrend');
+    var chart = echarts.init(chartDom);
+
+    var trendData = {{ weekly_trend | safe }};
+
+    var option = {
+        tooltip: {
+            trigger: 'axis',
+            formatter: function(params) {
+                return params[0].name + '<br/>新增项目: ' + params[0].value + ' 条';
+            }
+        },
+        grid: {
+            left: '3%', right: '4%', bottom: '3%', top: '10%',
+            containLabel: true
+        },
+        xAxis: {
+            type: 'category',
+            data: trendData.map(function(d) { return d.week; }),
+            boundaryGap: false
+        },
+        yAxis: {
+            type: 'value',
+            minInterval: 1,
+            name: '条'
+        },
+        series: [{
+            name: '新增项目',
+            type: 'line',
+            smooth: true,
+            data: trendData.map(function(d) { return d.count; }),
+            lineStyle: { color: '#1a73e8', width: 3 },
+            itemStyle: { color: '#1a73e8' },
+            areaStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    { offset: 0, color: 'rgba(26,115,232,0.3)' },
+                    { offset: 1, color: 'rgba(26,115,232,0.02)' }
+                ])
+            },
+            symbol: 'circle',
+            symbolSize: 8
+        }]
+    };
+
+    chart.setOption(option);
+    window.addEventListener('resize', function() { chart.resize(); });
+})();
+</script>
+
+{% endblock %}

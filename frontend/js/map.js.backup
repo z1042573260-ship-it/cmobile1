@@ -1,0 +1,101 @@
+// 烟台区县地图 + 预警项目呼吸散点
+// 地图显示参数 — 在浏览器 F12 调整到最佳后修改这里
+// var MAP_CONFIG = {
+//     zoom: 1.4,             // 缩放级别（越大越近）
+//     center: [121.39, 37.52] // 烟台市中心坐标 [经度, 纬度]
+// };
+// 
+var MAP_CONFIG = {
+    zoom: 1.4,             // 缩放级别（越大越近）
+    center: [120.85, 37.40] // 烟台市中心坐标 [经度, 纬度]
+};
+var yantaiMapChart = null;
+
+function initMap() {
+    var data = window.DASHBOARD_DATA || {};
+    var mapPoints = data.map_points || [];
+
+    // 分离红/黄散点
+    var redPoints = [];
+    var yellowPoints = [];
+    for (var i = 0; i < mapPoints.length; i++) {
+        var p = mapPoints[i];
+        var item = { name: p.name, value: p.value };
+        if (p.category === 'red') { redPoints.push(item); }
+        else { yellowPoints.push(item); }
+    }
+
+    // 构建 series 列表
+    var seriesList = [];
+    if (redPoints.length > 0) {
+        seriesList.push({
+            name: '红色预警', type: 'effectScatter', coordinateSystem: 'geo',
+            data: redPoints,
+            symbolSize: function(val) { var pri = val[2] || 1; return pri >= 5 ? 18 : pri >= 4 ? 14 : pri >= 3 ? 10 : 7; },
+            showEffectOn: 'render',
+            rippleEffect: { brushType: 'stroke', scale: 4, period: 3 },
+            label: { normal: { show: false }, emphasis: { show: true, formatter: '{b}' } },
+            itemStyle: { normal: { color: '#ff4444', shadowBlur: 10, shadowColor: 'rgba(255,68,68,.6)' } },
+            zlevel: 1
+        });
+    }
+    if (yellowPoints.length > 0) {
+        seriesList.push({
+            name: '黄色预警', type: 'effectScatter', coordinateSystem: 'geo',
+            data: yellowPoints,
+            symbolSize: function(val) { var pri = val[2] || 1; return pri >= 5 ? 16 : pri >= 4 ? 12 : pri >= 3 ? 9 : 6; },
+            showEffectOn: 'render',
+            rippleEffect: { brushType: 'stroke', scale: 3, period: 4 },
+            label: { normal: { show: false }, emphasis: { show: true, formatter: '{b}' } },
+            itemStyle: { normal: { color: '#ffcc00', shadowBlur: 10, shadowColor: 'rgba(255,204,0,.5)' } },
+            zlevel: 1
+        });
+    }
+
+    // 加载 GeoJSON 并渲染地图
+    $.getJSON('js/yantai.json')
+        .done(function(geoJson) {
+            echarts.registerMap('yantai', geoJson);
+            renderMap(seriesList);
+        })
+        .fail(function() {
+            // yantai.json 加载失败，仍然尝试渲染（可能已有注册的地图）
+            renderMap(seriesList);
+        });
+
+    function renderMap(series) {
+        var dom = document.getElementById('map');
+        if (!dom) return;
+        if (yantaiMapChart) { yantaiMapChart.dispose(); }
+        yantaiMapChart = echarts.init(dom);
+
+        var option = {
+            tooltip: {
+                trigger: 'item',
+                formatter: function(params) {
+                    if (params.seriesType === 'effectScatter') {
+                        return '<b>' + params.name + '</b><br/>优先级: ' + (params.value ? params.value[2] : '');
+                    }
+                    return params.name;
+                }
+            },
+            geo: {
+                map: 'yantai',
+                roam: false,
+                zoom: MAP_CONFIG.zoom,
+                center: MAP_CONFIG.center,
+                label: {
+                    normal: { show: true, color: 'rgba(255,255,255,.6)', fontSize: 11, position: 'top' },
+                    emphasis: { show: true, color: '#fff' }
+                },
+                itemStyle: {
+                    normal: { areaColor: 'rgba(2,37,101,.5)', borderColor: 'rgba(112,187,252,.6)', borderWidth: 1 },
+                    emphasis: { areaColor: 'rgba(2,37,101,.8)', borderColor: '#02a6b5' }
+                }
+            },
+            series: series
+        };
+
+        yantaiMapChart.setOption(option);
+    }
+}

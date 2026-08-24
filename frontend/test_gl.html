@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<style>#map{width:800px;height:600px;background:#0a1a3a;}</style>
+</head><body>
+<div id="map"></div>
+<div id="log" style="color:#0f0;background:#000;padding:10px;font-family:monospace;white-space:pre;"></div>
+<script src="js/echarts.min.js"></script>
+<script>
+var log = document.getElementById('log');
+function L(msg) { log.textContent += msg + '
+'; }
+L('echarts version: ' + (echarts && echarts.version ? echarts.version : 'UNKNOWN'));
+L('echarts keys: ' + Object.keys(echarts).slice(0, 15).join(', '));
+</script>
+<script src="js/echarts-gl.min.js"></script>
+<script>
+L('After echarts-gl load:');
+L('  echarts-gl on window: ' + (window['echarts-gl'] ? 'YES' : 'NO'));
+L('  echarts.extendChartView: ' + (typeof echarts.extendChartView));
+// Check for GL components
+var hasGeo3D = false;
+try {
+    // Try to detect geo3D support
+    L('  Checking geo3D support...');
+} catch(e) { L('  Error: ' + e.message); }
+
+// Now try to render
+$.getJSON('js/yantai.json', function(geoJson) {
+    L('GeoJSON loaded: ' + geoJson.features.length + ' features');
+    echarts.registerMap('yantai', geoJson);
+    L('Map registered');
+    
+    var dom = document.getElementById('map');
+    L('DOM element: ' + (dom ? 'found' : 'NOT FOUND'));
+    
+    try {
+        var chart = echarts.init(dom, null, { renderer: 'webgl' });
+        L('Chart init OK');
+        L('Renderer: ' + (chart.getZr ? chart.getZr().painter.type : 'unknown'));
+        
+        chart.setOption({
+            geo3D: {
+                map: 'yantai',
+                roam: true,
+                regionHeight: 2,
+                boxHeight: 1.5,
+                viewControl: { alpha: 45, beta: -30, distance: 160 },
+                shading: 'realistic',
+                realisticMaterial: { roughness: 0.6, metalness: 0.3 },
+                light: { main: { intensity: 1.2, shadow: true, shadowQuality: 'medium', alpha: 40, beta: 10 }, ambient: { intensity: 0.6 } },
+                postEffect: { enable: true, bloom: { enable: true, intensity: 0.3 }, SSAO: { enable: true, radius: 2, intensity: 0.6 } },
+                groundPlane: { show: true, color: '#0a1a3a' },
+                itemStyle: { areaColor: '#00529e', borderColor: '#00deff', borderWidth: 1 },
+                label: { show: true, textStyle: { color: 'rgba(255,255,255,.9)', fontSize: 12 } }
+            },
+            series: []
+        });
+        L('setOption OK');
+    } catch(e) {
+        L('ERROR: ' + e.message + '
+Stack: ' + e.stack);
+    }
+}).fail(function(jqXHR, textStatus, errorThrown) {
+    L('GeoJSON load FAILED: ' + textStatus + ' - ' + errorThrown);
+});
+</script>
+</body></html>

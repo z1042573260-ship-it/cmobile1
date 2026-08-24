@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block title %}项目列表 - 烟台基站工程情报系统{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+
+    <!-- 标题 + 导出 -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">📋 项目列表 <span class="text-muted" style="font-size:14px;">(共 {{ total }} 条)</span></h4>
+        <a href="{{ url_for('projects.export_excel', **current_filters) }}"
+           class="btn btn-success btn-sm">
+            <i class="bi bi-file-excel"></i> 导出Excel
+        </a>
+    </div>
+
+    <!-- 筛选栏 -->
+    <div class="table-card mb-3">
+        <div class="p-3">
+            <form method="GET" class="row g-2">
+                <div class="col-md-2">
+                    <select name="district" class="form-select form-select-sm">
+                        <option value="">全部区县</option>
+                        {% for d in districts %}
+                        <option value="{{ d }}" {{ 'selected' if current_filters.district == d }}>
+                            {{ d }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="project_type" class="form-select form-select-sm">
+                        <option value="">全部类型</option>
+                        {% for t in project_types %}
+                        <option value="{{ t }}" {{ 'selected' if current_filters.project_type == t }}>
+                            {{ t }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <select name="need_base_station" class="form-select form-select-sm">
+                        <option value="">基站需求</option>
+                        <option value="高" {{ 'selected' if current_filters.need_base_station == '高' }}>高</option>
+                        <option value="中" {{ 'selected' if current_filters.need_base_station == '中' }}>中</option>
+                        <option value="低" {{ 'selected' if current_filters.need_base_station == '低' }}>低</option>
+                        <option value="无" {{ 'selected' if current_filters.need_base_station == '无' }}>无</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <select name="priority_min" class="form-select form-select-sm">
+                        <option value="">优先级</option>
+                        <option value="5" {{ 'selected' if current_filters.priority_min == 5 }}>5⭐</option>
+                        <option value="4" {{ 'selected' if current_filters.priority_min == 4 }}>4⭐+</option>
+                        <option value="3" {{ 'selected' if current_filters.priority_min == 3 }}>3⭐+</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <select name="status" class="form-select form-select-sm">
+                        <option value="">全部状态</option>
+                        <option value="新发现" {{ 'selected' if current_filters.status == '新发现' }}>新发现</option>
+                        <option value="跟进中" {{ 'selected' if current_filters.status == '跟进中' }}>跟进中</option>
+                        <option value="已签约" {{ 'selected' if current_filters.status == '已签约' }}>已签约</option>
+                        <option value="已丢失" {{ 'selected' if current_filters.status == '已丢失' }}>已丢失</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <select name="notified" class="form-select form-select-sm">
+                        <option value="">通知状态</option>
+                        <option value="1" {{ 'selected' if current_filters.notified == 1 }}>✅ 已通知</option>
+                        <option value="0" {{ 'selected' if current_filters.notified == 0 }}>⬜ 未通知</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="text" name="keyword" class="form-control form-control-sm"
+                           placeholder="搜索关键词..." value="{{ current_filters.keyword }}">
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-search"></i> 筛选
+                    </button>
+                </div>
+                <div class="col-md-1">
+                    <a href="{{ url_for('projects.list_projects') }}" class="btn btn-outline-secondary btn-sm w-100">
+                        <i class="bi bi-x-circle"></i> 重置
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 项目表格 -->
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>
+                            <a href="{{ url_for('projects.list_projects', sort_by='project_name', sort_desc='0' if current_filters.sort_desc else '1', **current_filters) }}">
+                                项目名称
+                            </a>
+                        </th>
+                        <th>类型</th>
+                        <th>区县</th>
+                        <th>规模</th>
+                        <th>AI 判断</th>
+                        <th>
+                            <a href="{{ url_for('projects.list_projects', sort_by='priority', sort_desc='0' if current_filters.sort_desc else '1', **current_filters) }}">
+                                优先级
+                            </a>
+                        </th>
+                        <th>通知</th>
+                        <th>状态</th>
+                        <th>
+                            <a href="{{ url_for('projects.list_projects', sort_by='created_at', sort_desc='0' if current_filters.sort_desc else '1', **current_filters) }}">
+                                发现时间
+                            </a>
+                        </th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if projects %}
+                        {% for p in projects %}
+                        <tr>
+                            <td>{{ (page-1)*20 + loop.index }}</td>
+                            <td>
+                                <a href="{{ url_for('projects.detail', project_id=p.id) }}"
+                                   style="text-decoration:none; font-weight:500;">
+                                    {{ p.project_name[:50] }}{% if p.project_name|length > 50 %}...{% endif %}
+                                </a>
+                            </td>
+                            <td>{{ p.project_type or '-' }}</td>
+                            <td>{{ p.district or '-' }}</td>
+                            <td>{{ p.scale or '-' }}</td>
+                            <td>
+                                <span class="badge-status {{ p.need_base_station }}">
+                                    {{ p.need_base_station or '-' }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge-priority p{{ p.priority }}">
+                                    {{ '★' * p.priority }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="notify-badge {{ 'yes' if p.notified else 'no' }}"
+                                      title="{{ '已于 ' + p.notified_at.strftime('%m-%d %H:%M') if p.notified_at else '' }}">
+                                    {{ '✅' if p.notified else '⬜' }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge-status {{ p.status }}">{{ p.status }}</span>
+                            </td>
+                            <td style="font-size:12px; color:#888;">
+                                {{ p.created_at.strftime('%m-%d %H:%M') if p.created_at else '-' }}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('projects.detail', project_id=p.id) }}"
+                                   class="btn btn-sm btn-outline-secondary">详情</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="11" class="text-center text-muted py-5">
+                                <i class="bi bi-inbox" style="font-size:32px;"></i>
+                                <p class="mt-2">暂无匹配的项目</p>
+                                <p class="small">请运行爬虫采集数据，或调整筛选条件</p>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 分页 -->
+    {% if total_pages > 1 %}
+    <nav class="mt-3">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {{ 'disabled' if page == 1 }}">
+                <a class="page-link" href="{{ url_for('projects.list_projects', page=page-1, **current_filters) if page > 1 else '#' }}">
+                    « 上一页
+                </a>
+            </li>
+
+            {% for p in range(1, total_pages + 1) %}
+                {% if p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+                <li class="page-item {{ 'active' if p == page }}">
+                    <a class="page-link" href="{{ url_for('projects.list_projects', page=p, **current_filters) }}">
+                        {{ p }}
+                    </a>
+                </li>
+                {% elif p == page - 3 or p == page + 3 %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+
+            <li class="page-item {{ 'disabled' if page == total_pages }}">
+                <a class="page-link" href="{{ url_for('projects.list_projects', page=page+1, **current_filters) if page < total_pages else '#' }}">
+                    下一页 »
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

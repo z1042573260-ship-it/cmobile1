@@ -1,0 +1,2150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建设项目数据分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js';document.head.appendChild(s);"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.bootcdn.net/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';document.head.appendChild(s);"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.bootcdn.net/ajax/libs/exceljs/4.4.0/exceljs.min.js';document.head.appendChild(s);"></script>
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4/fonts/remixicon.css" rel="stylesheet">
+<style>
+/* ====== Reset & Base ====== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f0f2f5;
+    color: #2c3e50;
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+/* ====== Container ====== */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+
+/* ====== Header ====== */
+.header {
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    padding: 24px 0;
+    margin-bottom: 24px;
+}
+.header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #2c3e50 30%, #3498db 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.header h1 i { margin-right: 8px; color: #3498db; font-size: 26px; vertical-align: middle;
+    -webkit-text-fill-color: #3498db; }
+.header .subtitle {
+    font-size: 13px;
+    color: #95a5a6;
+    margin-top: 4px;
+    display: flex; align-items: center; gap: 4px;
+}
+.header .subtitle i { font-size: 14px; }
+
+/* ====== Search Bar ====== */
+.search-wrap { position: relative; display: flex; align-items: center; }
+.search-input {
+    width: 200px; padding: 6px 32px 6px 10px;
+    border: 1.5px solid #dce1e6;
+    border-radius: 8px;
+    font-size: 14px; color: #2c3e50;
+    background: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+}
+.search-input:focus { border-color: #3498db; box-shadow: 0 0 0 3px rgba(52,152,219,0.1); }
+.search-input::placeholder { color: #bdc3c7; }
+.search-icon {
+    position: absolute; right: 10px;
+    color: #bdc3c7; font-size: 18px;
+    pointer-events: none; transition: color 0.2s;
+}
+.search-input:focus + .search-icon { color: #3498db; }
+.search-clear {
+    position: absolute; right: 10px;
+    color: #95a5a6; font-size: 16px;
+    cursor: pointer; display: none;
+    border: none; background: none; padding: 0;
+    line-height: 1;
+}
+.search-clear:hover { color: #e74c3c; }
+.search-input:not(:placeholder-shown) ~ .search-icon { display: none; }
+.search-input:not(:placeholder-shown) ~ .search-clear { display: block; }
+/* 导出 Excel 按钮 */
+.btn-export {
+    margin-right: 8px;
+    padding: 6px 14px;
+    border: 1.5px solid #27ae60;
+    border-radius: 8px;
+    background: #27ae60;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    transition: background 0.2s, border-color 0.2s;
+}
+.btn-export:hover { background: #219a52; border-color: #219a52; }
+.btn-export i { font-size: 15px; }
+
+/* ====== Modal ====== */
+.modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 9999;
+    justify-content: center; align-items: center;
+}
+.modal-overlay.active { display: flex; }
+.modal-box {
+    background: #fff; border-radius: 12px;
+    width: 460px; max-width: 90vw;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+    overflow: hidden;
+    animation: modalIn 0.2s ease;
+}
+@keyframes modalIn {
+    from { opacity: 0; transform: translateY(-20px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+}
+.modal-header h3 { margin: 0; font-size: 16px; color: #2c3e50; }
+.modal-header h3 i { color: #3498db; margin-right: 6px; }
+.modal-close {
+    background: none; border: none;
+    font-size: 20px; color: #95a5a6;
+    cursor: pointer; padding: 4px;
+    line-height: 1; border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+}
+.modal-close:hover { color: #e74c3c; background: #f5f5f5; }
+.modal-body { padding: 20px; }
+.modal-label {
+    display: block; font-size: 13px; font-weight: 600;
+    color: #555; margin-bottom: 8px;
+}
+.modal-input {
+    width: 100%; padding: 10px 14px;
+    border: 1.5px solid #dce1e6;
+    border-radius: 8px; font-size: 14px;
+    outline: none; color: #2c3e50;
+    transition: border-color 0.2s;
+}
+.modal-input:focus { border-color: #3498db; }
+.modal-hint {
+    font-size: 12px; color: #95a5a6;
+    margin-top: 6px;
+}
+.modal-actions {
+    display: flex; justify-content: flex-end; gap: 10px;
+    margin-top: 20px;
+}
+.btn-cancel, .btn-send {
+    padding: 9px 20px; border-radius: 8px;
+    font-size: 14px; font-weight: 500;
+    cursor: pointer; border: none;
+    transition: background 0.2s;
+}
+.btn-cancel { background: #f0f2f5; color: #555; }
+.btn-cancel:hover { background: #e0e3e8; }
+.btn-send { background: #3498db; color: #fff; }
+.btn-send:hover { background: #2980b9; }
+.btn-send:disabled { background: #bdc3c7; cursor: not-allowed; }
+.modal-result {
+    margin-top: 14px; padding: 10px 14px;
+    border-radius: 8px; font-size: 13px;
+}
+.modal-result.success { background: #eafaf1; color: #27ae60; border: 1px solid #a9dfbf; }
+.modal-result.error { background: #fdedec; color: #c0392b; border: 1px solid #f5b7b1; }
+
+/* Spin keyframes (fallback for Remixicon .ri-spin) */
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* Breathing light */
+@keyframes breath {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(39,174,96,0.4); }
+    50% { opacity: 0.6; box-shadow: 0 0 0 6px rgba(39,174,96,0); }
+}
+.breath-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #27ae60;
+    animation: breath 1.5s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+/* ====== Summary Cards ====== */
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 24px;
+}
+@media (max-width: 768px) { .summary-cards { grid-template-columns: repeat(2, 1fr); } }
+.card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 28px 36px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+.card.clickable { cursor: pointer; }
+.card-icon {
+    width: 52px; height: 52px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; flex-shrink: 0;
+}
+.card-icon i { display: flex; align-items: center; justify-content: center; }
+.card-icon.total  { background: #ebf5fb; color: #3498db; }
+.card-icon.red   { background: #fdedec; color: #e74c3c; }
+.card-icon.yellow{ background: #fef5e7; color: #f39c12; }
+.card-info { min-width: 0; }
+.card-number {
+    font-size: 32px; font-weight: 700; line-height: 1.1;
+    font-family: "SF Mono", "Menlo", "Consolas", monospace;
+}
+.card-label { font-size: 13px; color: #95a5a6; margin-top: 4px; }
+.card-trend {
+    font-size: 12px; font-weight: 600; margin-top: 6px;
+    display: inline-flex; align-items: center; gap: 3px;
+}
+.card-trend.up   { color: #e74c3c; }
+.card-trend.down { color: #27ae60; }
+.card-trend.flat { color: #bdc3c7; }
+
+/* ====== Table Filters (in table header，一行布局) ====== */
+.table-tools {
+    display: flex; align-items: center; gap: 115px;
+    flex-wrap: nowrap; min-width: 0;
+}
+.table-filters {
+    display: flex; gap: 6px; align-items: center;
+    flex-wrap: nowrap;
+}
+.table-filters select {
+    padding: 5px 20px 5px 8px;
+    border: 1.5px solid #dce1e6;
+    border-radius: 6px;
+    font-size: 12px; color: #2c3e50;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%2395a5a6'/%3E%3C/svg%3E") no-repeat right 8px center;
+    appearance: none; cursor: pointer;
+    transition: border-color 0.2s;
+}
+.table-filters select:focus { outline: none; border-color: #3498db; }
+
+/* ====== Charts Row（report2：已删预警分布，单卡占满） ====== */
+.charts-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+@media (max-width: 768px) { .charts-row { grid-template-columns: 1fr; } }
+.chart-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    overflow: hidden;
+}
+.chart-card-header {
+    padding: 16px 20px 0;
+    font-size: 16px; font-weight: 600; color: #2c3e50;
+    display: flex; align-items: center; gap: 6px;
+}
+.chart-card-header i { font-size: 17px; }
+.chart-card-body { width: 100%; height: 320px; }
+
+/* Calendar inside chart card */
+.calendar-container { padding: 16px 12px 16px; }
+.calendar-weekdays {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 5px; margin-bottom: 5px;
+    text-align: center; font-size: 11px; color: #95a5a6; font-weight: 500;
+}
+.calendar-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+}
+.day-box {
+    height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px;
+    font-size: 14px; font-weight: 500;
+    cursor: default;
+    transition: all 0.15s;
+}
+.day-box.active {
+    background: #3498db; color: #fff;
+    cursor: pointer;
+}
+.day-box.active:hover { background: #2980b9; transform: scale(1.08); }
+.day-box.inactive { background: #f0f2f5; color: #bdc3c7; }
+.day-box.today { box-shadow: inset 0 0 0 2px #e74c3c; }
+/* Clickable chart card header for toggle */
+.chart-card-header.toggle { cursor: pointer; user-select: none; transition: color 0.15s; }
+.chart-card-header.toggle:hover { color: #3498db; }
+
+/* ====== District Ranking ====== */
+.ranking-row {
+    margin-bottom: 24px;
+}
+.ranking-section {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    overflow: hidden;
+}
+.ranking-header { padding: 16px 20px 0; font-size: 16px; font-weight: 600; color: #2c3e50; display: flex; align-items: center; gap: 6px; }
+.ranking-header i { font-size: 17px; }
+.ranking-body { width: 100%; height: 320px; }
+
+/* ====== Processed Row (卡片网格 section，同项目明细) ====== */
+.processed-row {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+    padding: 20px 22px;
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+.processed-row-header {
+    padding: 0 0 14px 0;
+    font-size: 15px; font-weight: 700; color: #2c3e50;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 10px; flex-wrap: wrap;
+    border-bottom: 1px solid #eef1f4;
+    margin-bottom: 14px;
+}
+.processed-row-header > span:first-child { display: inline-flex; align-items: center; gap: 6px; }
+.processed-row-header > span:first-child i { font-size: 17px; color: #27ae60; }
+.processed-row-header > span:first-child::before {
+    content: ''; display: inline-block;
+    width: 4px; height: 18px; border-radius: 2px;
+    background: #27ae60;
+}
+.processed-count { font-size: 13px; color: #95a5a6; font-weight: 400; }
+.processed-row-list {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+/* 已处理空状态复用 .empty-state */
+/* 已处理卡片绿色顶边 */
+.processed-row-list .project-card { border-top: 5px solid #27ae60; }
+/* 已处理卡片：区县标识上移给时间让位 */
+.processed-row-list .district-tag { bottom: 34px; }
+/* 处理时间标签 — 放在右下角区县标识下方 */
+.processed-time {
+    position: absolute; right: 10px; bottom: 8px;
+    font-size: 13px; color: #8899aa; font-weight: 600;
+    display: flex; align-items: center; gap: 4px;
+    pointer-events: none;
+    line-height: 1;
+}
+.processed-time i { font-size: 13px; }
+
+/* ====== Project Card List ====== */
+.table-section {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+    padding: 20px 22px;
+    margin-bottom: 24px;
+}
+.table-header {
+    padding: 0 0 14px 0;
+    font-size: 15px; font-weight: 700; color: #2c3e50;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 10px; flex-wrap: nowrap;   /* 筛选/搜索保持一行 */
+    border-bottom: 1px solid #eef1f4;
+    margin-bottom: 14px;
+}
+.table-header span { display: inline-flex; align-items: center; gap: 6px; }
+.table-header span i { font-size: 17px; }
+.table-header span::before {
+    content: ''; display: inline-block;
+    width: 4px; height: 18px; border-radius: 2px;
+    background: #e74c3c;
+}
+.table-count { font-size: 13px; color: #95a5a6; font-weight: 400; }
+
+/* Processing mode */
+.btn-process {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 7px 18px;
+    border: 1.5px solid #e67e22;
+    border-radius: 6px;
+    background: #fff;
+    color: #e67e22;
+    font-size: 14px; font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    margin-left: 8px;
+}
+.btn-process:hover { background: #fef5e7; }
+.btn-process.active { background: #27ae60; color: #fff; border-color: #27ae60; }
+.btn-process.active:hover { background: #219a52; }
+
+/* Process checkbox on cards */
+.process-check {
+    display: none; align-items: center; padding: 0 12px;
+    flex-shrink: 0; cursor: pointer;
+}
+.process-check.visible { display: flex; }
+.process-circle {
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 2px solid #dce1e6;
+    background: #fff;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: transparent;
+}
+.process-circle:hover { border-color: #27ae60; }
+.process-check.checked .process-circle {
+    background: #27ae60; border-color: #27ae60; color: #fff;
+}
+
+/* Processed project card */
+.project-card.processed { opacity: 0.55; }
+.project-card.processed:hover { opacity: 1; }
+
+/* section card wrapper */
+.section-card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+    padding: 20px 22px;
+    margin-bottom: 22px;
+}
+.section-card .section-title {
+    font-size: 15px; font-weight: 700; color: #2c3e50;
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+}
+.section-card .section-title::before {
+    content: ''; display: inline-block;
+    width: 4px; height: 18px; border-radius: 2px;
+    background: #e74c3c;
+}
+
+/* ====== Project Grid ====== */
+.project-list {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 0;
+}
+.project-card {
+    display: flex; flex-direction: column; gap: 0;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+    transition: box-shadow 0.2s, transform 0.15s;
+    overflow: hidden;
+    aspect-ratio: 1;
+    min-height: 250px;
+}
+.project-card:hover {
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+    transform: translateY(-1px);
+}
+/* thick top warning strip */
+.project-card.red   { border-top: 5px solid #e74c3c; }
+.project-card.yellow{ border-top: 5px solid #f39c12; }
+/* main content area */
+.project-main { flex: 1; padding: 14px; min-width: 0; display: flex; flex-direction: column; gap: 12px; overflow: hidden; position: relative; }
+.project-title {
+    font-size: 17px; font-weight: 600; color: #2c3e50;
+    line-height: 1.4;
+    display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;
+    overflow: hidden;
+    cursor: pointer;
+}
+.project-title:hover { color: #3498db; }
+/* highlight search keywords */
+.project-title .highlight { background: #fff3cd; padding: 0 2px; border-radius: 2px; }
+/* badges */
+.badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 3px 10px; border-radius: 12px;
+    font-size: 12px; font-weight: 600; white-space: nowrap;
+}
+.badge i { font-size: 13px; }
+.badge.district { background: #ebf5fb; color: #2980b9; }
+.badge.type     { background: #f5f0ff; color: #7c3aed; }
+.badge.stage    { background: #f0fdf4; color: #16a34a; }
+.badge.date     { background: #fff7ed; color: #c2410c; font-weight: 400; }
+.badge.invest   { background: #fffbeb; color: #b45309; font-weight: 700; }
+/* 地点 badge：长文本省略，防止撑破卡片导致错位 */
+.badge.location {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+/* filler text area — flex fills space between title and tags */
+.card-filler {
+    flex: 1;
+    font-size: 13px; color: #5a6a7a; line-height: 1.6;
+    overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical;
+}
+/* tags close below filler — right padding leaves room for district label */
+.project-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 5px; padding-right: 105px; }
+/* prominent warning tag */
+.badge.warn-red   { background: #fdedec; color: #e74c3c; font-size: 12px; padding: 4px 12px; border-radius: 4px; font-weight: 700; }
+.badge.warn-yellow{ background: #fef5e7; color: #f39c12; font-size: 12px; padding: 4px 12px; border-radius: 4px; font-weight: 700; }
+/* district label at bottom-right corner */
+.district-tag {
+    position: absolute; right: 10px; bottom: 10px;
+    font-size: 25px; font-weight: 700; color: #5ba0d0;
+    pointer-events: none;
+    line-height: 1;
+}
+@media (max-width: 768px) {
+    .process-check.visible { padding: 10px 12px 6px 12px; }
+}
+
+.btn-detail {
+    padding: 5px 14px;
+    border: 1px solid #dce1e6;
+    border-radius: 6px;
+    background: #fff;
+    color: #3498db;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 4px;
+    text-decoration: none;
+}
+.btn-detail:hover { background: #3498db; color: #fff; border-color: #3498db; }
+
+.btn-process-card {
+    padding: 5px 14px;
+    border: 1px solid #dce1e6;
+    border-radius: 6px;
+    background: #fff;
+    color: #e67e22;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 4px;
+}
+.btn-process-card:hover { background: #fef5e7; border-color: #e67e22; }
+.btn-process-card.done { background: #27ae60; color: #fff; border-color: #27ae60; }
+.btn-process-card.done:hover { background: #219a52; }
+.btn-url {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 16px;
+    background: #3498db; color: #fff;
+    border: none; border-radius: 6px;
+    font-size: 13px; cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+.btn-url:hover { background: #2980b9; }
+.btn-url i { font-size: 15px; }
+
+/* ====== Modal ====== */
+.modal-overlay {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4); z-index: 999;
+    align-items: center; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+    position: relative;              /* 供右上角关闭按钮定位 */
+    background: #fff; border-radius: 14px;
+    max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;
+    scrollbar-width: none;              /* Firefox：隐藏滚动条（内容仍可滚） */
+    -ms-overflow-style: none;           /* IE/Edge 旧版 */
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    animation: modalIn 0.2s ease-out;
+}
+.modal::-webkit-scrollbar { display: none; }   /* Chrome/Safari：隐藏滚动条 */
+/* 右上角关闭按钮 */
+.modal-close {
+    position: absolute; top: 14px; right: 16px;
+    width: 30px; height: 30px; line-height: 1;
+    font-size: 22px; color: #7f8c8d; background: none;
+    border: none; border-radius: 50%; cursor: pointer;
+}
+.modal-close:hover { color: #e74c3c; background: #f0f2f5; }
+/* 标题右侧留白，不被右上角关闭按钮遮挡 */
+.modal-header h3 { padding-right: 40px; }
+@keyframes modalIn { from { opacity: 0; transform: translateY(20px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.modal-header {
+    padding: 20px 24px 0;
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+}
+.modal-header h3 { font-size: 17px; font-weight: 700; color: #2c3e50; line-height: 1.5; }
+.modal-close {
+    width: 32px; height: 32px; border-radius: 50%; border: none; background: #f0f0f0;
+    font-size: 18px; cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s; color: #7f8c8d;
+}
+.modal-close:hover { background: #e0e0e0; color: #e74c3c; }
+.modal-body { padding: 16px 24px 20px; }
+.modal-field { display: flex; margin-bottom: 10px; font-size: 14px; align-items: baseline; }
+.modal-field i { color: #95a5a6; margin-right: 6px; font-size: 14px; width: 16px; text-align: center; }
+.modal-field .label { color: #95a5a6; min-width: 60px; flex-shrink: 0; }
+.modal-field .value { color: #2c3e50; font-weight: 500; }
+.modal-summary {
+    background: #f8f9fb; border-radius: 8px; padding: 14px 16px;
+    margin-top: 8px; font-size: 13px; color: #555; line-height: 1.7;
+    display: flex; gap: 6px;
+}
+.modal-summary i { color: #95a5a6; font-size: 14px; flex-shrink: 0; margin-top: 2px; }
+.modal-summary .label { color: #95a5a6; min-width: 60px; flex-shrink: 0; }
+/* 长文本（AI 推理/原文全文）：占满剩余宽度、自动换行 */
+.modal-summary > span:last-child { flex: 1; min-width: 0; word-break: break-all; white-space: pre-wrap; }
+.modal-footer {
+    padding: 0 24px 20px;
+    display: flex; gap: 10px; flex-wrap: wrap;
+}
+
+/* ====== Toast ====== */
+.toast {
+    position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+    background: #27ae60; color: #fff;
+    padding: 10px 24px; border-radius: 8px;
+    font-size: 14px; font-weight: 600;
+    z-index: 9999;
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 4px 16px rgba(39,174,96,0.3);
+    animation: toastIn 0.3s ease-out, toastOut 0.3s ease-in 2.2s forwards;
+    pointer-events: none;
+}
+@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(-20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+@keyframes toastOut { from { opacity: 1; transform: translateX(-50%) translateY(0); } to { opacity: 0; transform: translateX(-50%) translateY(-20px); } }
+
+/* ====== Footer ====== */
+.footer {
+    text-align: center; padding: 24px 0 40px;
+    color: #b0b8c1; font-size: 12px;
+    display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap;
+}
+.footer i { font-size: 13px; }
+.footer .sep { margin: 0 8px; }
+
+/* ====== Empty State ====== */
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center; padding: 40px; color: #bdc3c7; font-size: 14px;
+}
+.empty-state i { font-size: 48px; margin-bottom: 12px; display: block; }
+
+/* ====== Pagination ====== */
+.pagination {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; padding: 16px 0 8px;
+}
+.pagination button {
+    padding: 6px 14px;
+    border: 1px solid #dce1e6;
+    border-radius: 6px;
+    background: #fff;
+    color: #555;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.pagination button:hover:not(:disabled) { border-color: #3498db; color: #3498db; }
+.pagination button:disabled { opacity: 0.4; cursor: default; }
+.pagination button.active { background: #3498db; color: #fff; border-color: #3498db; }
+.pagination .page-info { font-size: 13px; color: #95a5a6; margin: 0 4px; }
+.pagination .page-ellipsis { font-size: 13px; color: #95a5a6; margin: 0 2px; }
+.pagination select {
+    padding: 5px 24px 5px 8px;
+    border: 1px solid #dce1e6;
+    border-radius: 6px;
+    font-size: 13px; color: #555;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M5 7L1 3h8z' fill='%2395a5a6'/%3E%3C/svg%3E") no-repeat right 6px center;
+    appearance: none; cursor: pointer;
+}
+
+/* ====== Mobile Adaptation ====== */
+
+/* Tablet: 768px - 1024px */
+@media (max-width: 1024px) {
+    .container { max-width: 100%; padding: 0 16px; }
+    .header-inner { padding: 0 16px; }
+    .summary-cards { gap: 16px; }
+    .card { padding: 20px 24px; gap: 14px; }
+    .card-number { font-size: 28px; }
+    .card-icon { width: 44px; height: 44px; font-size: 22px; }
+    .charts-row { grid-template-columns: 1fr; gap: 16px; }
+    .chart-card-body { height: 280px; }
+    .ranking-body { height: 280px; }
+    .processed-row { padding: 14px 16px; }
+    .processed-row-header { font-size: 14px; padding: 0 0 10px 0; margin-bottom: 10px; }
+    .processed-row-list { gap: 12px; grid-template-columns: repeat(3, 1fr); }
+    /* project grid: 3 columns on tablet */
+    .project-list { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .project-card { min-height: 220px; }
+    .project-title { font-size: 15px; }
+    .card-filler { font-size: 12px; -webkit-line-clamp: 4; }
+    .project-meta { margin-top: 5px; padding-right: 85px; }
+    .district-tag { font-size: 20px; right: 8px; bottom: 10px; }
+    .processed-row-list .district-tag { bottom: 30px; }
+    .processed-time { font-size: 11px; right: 8px; bottom: 6px; }
+    .processed-time i { font-size: 11px; }
+    .header h1 { font-size: 20px; }
+}
+
+/* Phone: 480px - 768px */
+@media (max-width: 768px) {
+    body { font-size: 14px; }
+
+    /* Header stacks */
+    .header { padding: 16px 0; margin-bottom: 16px; }
+    .header-inner { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .header h1 { font-size: 18px; }
+    .header .subtitle { font-size: 12px; white-space: nowrap; }
+
+
+    /* Search full width */
+    .search-wrap { width: 100%; }
+    .search-input { width: 100%; }
+
+    /* 手机版：筛选/导出/搜索自动换行，不冲出屏幕 */
+    .table-header { flex-wrap: wrap; gap: 8px; }
+    .table-tools { flex-wrap: wrap; width: 100%; justify-content: flex-end; gap: 10px; }
+    .table-filters { flex-wrap: wrap; width: 100%; gap: 6px; }
+    .table-filters select { font-size: 11px; padding: 4px 18px 4px 7px; }
+    .btn-export { margin-right: 0; padding: 5px 12px; font-size: 12px; }
+
+    /* Summary cards: 2 column */
+    .summary-cards { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .card { padding: 16px 18px; gap: 12px; border-radius: 12px; }
+    .card-icon { width: 40px; height: 40px; font-size: 20px; border-radius: 10px; }
+    .card-number { font-size: 24px; }
+    .card-label { font-size: 12px; }
+    .card-trend { font-size: 11px; }
+
+    /* Charts: single column, reduced height */
+    .charts-row { grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; }
+    .chart-card-body { height: 260px; }
+    .chart-card-header { font-size: 15px; padding: 12px 16px 0; }
+    .calendar-container { padding: 14px 10px 14px; }
+    .calendar-weekdays { font-size: 10px; gap: 4px; }
+    .calendar-grid { gap: 4px; }
+    .day-box { height: 32px; font-size: 13px; border-radius: 5px; }
+    .ranking-body { height: 280px; }
+    .ranking-header { font-size: 15px; padding: 12px 16px 0; }
+    .processed-row { border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
+    .processed-row-header { font-size: 14px; }
+    .processed-row-list { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+    /* Project grid: 2 columns on phone */
+    .project-list { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .project-card { min-height: 200px; border-radius: 8px; }
+    .project-card.red, .project-card.yellow { border-top-width: 4px; }
+    .project-main { padding: 12px; gap: 10px; }
+    .project-title { font-size: 14px; }
+    .project-meta { gap: 5px; margin-top: 5px; padding-right: 75px; }
+    .badge { font-size: 10px; padding: 2px 7px; }
+    .badge i { font-size: 10px; }
+    .card-filler { font-size: 12px; -webkit-line-clamp: 4; }
+    .district-tag { font-size: 18px; right: 8px; bottom: 10px; }
+    .processed-row-list .district-tag { bottom: 28px; }
+    .processed-time { font-size: 11px; right: 8px; bottom: 6px; }
+    .processed-time i { font-size: 11px; }
+
+    /* Pagination */
+    .pagination { flex-wrap: wrap; gap: 6px; }
+    .pagination button { padding: 7px 12px; font-size: 12px; min-width: 36px; min-height: 36px; }
+    .pagination .page-info { font-size: 12px; }
+    .pagination select { font-size: 12px; padding: 6px 22px 6px 8px; }
+
+    /* Table header */
+    .table-header { font-size: 14px; }
+    .table-count { font-size: 12px; }
+    .table-section { padding: 14px 16px; }
+
+    /* Footer */
+    .footer { font-size: 11px; padding: 16px 12px 24px; }
+    .footer .sep { margin: 0 4px; }
+}
+
+/* Small phone: < 480px */
+@media (max-width: 480px) {
+    body { font-size: 13px; }
+    .container { padding: 0 10px; }
+
+    /* Header */
+    .header { padding: 12px 0; margin-bottom: 12px; }
+    .header-inner { padding: 0 12px; gap: 8px; }
+    .header h1 { font-size: 16px; }
+    .header h1 i { font-size: 20px; }
+
+    /* Summary cards: single column */
+    .summary-cards { grid-template-columns: 1fr; gap: 10px; margin-bottom: 16px; }
+    .card { padding: 14px 16px; gap: 12px; flex-direction: row; }
+    .card-number { font-size: 22px; }
+    .card-icon { width: 36px; height: 36px; font-size: 18px; border-radius: 8px; }
+
+    /* Filters (in table header, shrink on small screen) */
+    .table-filters select { font-size: 11px; padding: 5px 22px 5px 8px; }
+
+    /* Charts */
+    .chart-card-body { height: 240px; }
+    .ranking-body { height: 240px; }
+    .calendar-container { padding: 12px 8px 12px; }
+    .calendar-weekdays { font-size: 9px; gap: 3px; }
+    .calendar-grid { gap: 3px; }
+    .day-box { height: 26px; font-size: 11px; border-radius: 4px; }
+    .processed-row-list { grid-template-columns: 1fr; gap: 10px; }
+    .processed-row { padding: 12px 14px; }
+
+    /* Project grid: 1 column on small phone */
+    .project-list { grid-template-columns: 1fr; gap: 10px; }
+    .project-card { aspect-ratio: auto; min-height: 140px; }
+    .project-main { padding: 10px 12px; gap: 10px; }
+    .project-title { font-size: 15px; }
+    .process-check.visible { padding: 8px 12px 4px 12px; }
+    .badge { font-size: 10px; padding: 2px 6px; }
+    .badge i { display: none; }
+    .card-filler { font-size: 12px; -webkit-line-clamp: 4; }
+    .project-meta { margin-top: 5px; padding-right: 90px; }
+    .district-tag { font-size: 20px; right: 8px; bottom: 10px; }
+    .processed-row-list .district-tag { bottom: 30px; }
+    .processed-time { font-size: 11px; right: 8px; bottom: 6px; }
+    .processed-time i { font-size: 11px; }
+
+    /* Pagination */
+    .pagination button { padding: 6px 10px; font-size: 11px; min-width: 32px; min-height: 32px; }
+    .pagination .page-info { display: none; }  /* hide "共N条" on smallest screens */
+    .pagination select { font-size: 11px; }
+
+    /* Modal: fullscreen */
+    .modal-overlay.show { align-items: flex-end; }
+    .modal { max-width: 100%; width: 100%; border-radius: 16px 16px 0 0; max-height: 90vh; }
+    @keyframes modalIn { from { opacity: 0; transform: translateY(100%); } to { opacity: 1; transform: translateY(0); } }
+    .modal-header { padding: 16px 16px 0; }
+    .modal-header h3 { font-size: 15px; }
+    .modal-body { padding: 12px 16px 16px; max-height: 50vh; overflow-y: auto; }
+    .modal-field { font-size: 13px; margin-bottom: 8px; }
+    .modal-footer { padding: 0 16px 16px; flex-direction: column; }
+    .btn-url { justify-content: center; width: 100%; padding: 10px; }
+}
+
+/* Landscape phone / short screens */
+@media (max-height: 500px) and (orientation: landscape) {
+    .header { padding: 8px 0; }
+    .summary-cards { grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+    .card { padding: 10px 14px; }
+    .card-number { font-size: 20px; }
+    .card-icon { width: 32px; height: 32px; font-size: 16px; }
+    .charts-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .chart-card-body { height: 200px; }
+    .ranking-body { height: 200px; }
+    .project-list { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .project-card { min-height: 140px; }
+    .project-main { padding: 8px 10px; }
+    .card-filler { -webkit-line-clamp: 3; font-size: 10px; }
+}
+
+/* Touch-friendly: ensure all interactive elements have min 44px tap target on mobile */
+@media (hover: none) and (pointer: coarse) {
+    .btn-detail { min-height: 40px; min-width: 40px; display: inline-flex; align-items: center; justify-content: center; }
+    .pagination button { min-height: 40px; min-width: 40px; }
+    .modal-close { min-height: 40px; min-width: 40px; }
+    .table-filters select { min-height: 36px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+    <div class="header-inner">
+        <div>
+            <h1><i class="ri-dashboard-line"></i>建设项目数据分析报告</h1>
+            <p class="subtitle"><i class="ri-time-line"></i> 数据更新于 <span id="updateTime">--</span></p>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+
+<!-- Summary Cards -->
+<div class="summary-cards" id="summaryCards">
+    <div class="card clickable" onclick="filterByWarning('')">
+        <div class="card-icon total"><i class="ri-folder-chart-line"></i></div>
+        <div class="card-info">
+            <div class="card-number" id="numTotal">--</div>
+            <div class="card-label">项目总数 <span class="card-trend" id="trendTotal"></span></div>
+        </div>
+    </div>
+    <div class="card clickable" onclick="filterByWarning('红色预警')">
+        <div class="card-icon red"><i class="ri-alert-fill"></i></div>
+        <div class="card-info">
+            <div class="card-number" id="numRed" style="color:#e74c3c">--</div>
+            <div class="card-label">红色预警 <span class="card-trend" id="trendRed"></span></div>
+        </div>
+    </div>
+    <div class="card clickable" onclick="filterByWarning('黄色预警')">
+        <div class="card-icon yellow"><i class="ri-error-warning-fill"></i></div>
+        <div class="card-info">
+            <div class="card-number" id="numYellow" style="color:#f39c12">--</div>
+            <div class="card-label">黄色预警 <span class="card-trend" id="trendYellow"></span></div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row（report2：仅月度趋势） -->
+<div class="charts-row">
+    <div class="chart-card">
+        <div class="chart-card-header"><i class="ri-line-chart-line"></i> 月度趋势</div>
+        <div class="chart-card-body" id="chartLineBody">
+            <div id="chartLine" style="width:100%;height:100%;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- District Ranking -->
+<div class="ranking-row">
+    <div class="ranking-section">
+        <div class="ranking-header"><i class="ri-trophy-line"></i> 区县数据</div>
+        <div class="ranking-body" id="chartBar"></div>
+    </div>
+</div>
+
+<!-- Project Card List -->
+<div class="table-section">
+    <div class="table-header">
+        <span><i class="ri-file-list-3-line"></i> 项目明细</span>
+        <div class="table-tools">
+            <div class="table-filters">
+                <select id="filterDistrict" onchange="applyFilters()">
+                    <option value="">全部区县</option>
+                </select>
+                <select id="filterWarning" onchange="applyFilters()">
+                    <option value="">全部预警级别</option>
+                    <option value="红色预警">红色预警</option>
+                    <option value="黄色预警">黄色预警</option>
+                </select>
+                <select id="filterMonth" onchange="applyFilters()">
+                    <option value="__week__" selected>本周</option>
+                    <option value="">全部月份</option>
+                </select>
+                <select id="filterStage" onchange="applyFilters()">
+                    <option value="">全部阶段</option>
+                </select>
+                <select id="filterType" onchange="applyFilters()">
+                    <option value="">全部类型</option>
+                </select>
+            </div>
+            <div class="search-wrap">
+                <button class="btn-export" onclick="exportExcel()" title="按当前筛选条件导出 Excel"><i class="ri-file-excel-2-line"></i> 导出</button>
+                <input type="text" class="search-input" id="searchInput" placeholder="搜索…" oninput="onSearchInput()" onkeydown="if(event.key==='Enter')this.blur()">
+                <i class="ri-search-line search-icon"></i>
+                <button class="search-clear" id="searchClear" onclick="clearSearch()"><i class="ri-close-circle-fill"></i></button>
+            </div>
+        </div>
+    </div>
+    <!-- Full project grid -->
+    <div class="project-list" id="projectList"></div>
+    <div class="pagination" id="pagination"></div>
+</div>
+
+</div><!-- .container -->
+
+<!-- Footer -->
+<footer class="footer">
+    <i class="ri-database-2-line"></i>
+    <span>数据来源：烟台13区县政府公告 · 公共资源交易网 · 规划局 · 投资促进中心 · 省级招标信息</span>
+    <span class="sep">|</span>
+    <i class="ri-time-line"></i>
+    <span>更新时间：<span id="footerTime">--</span></span>
+</footer>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="modalTitle">--</h3>
+            <button class="modal-close" onclick="closeModal()" title="关闭">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-field"><i class="ri-map-pin-line"></i><span class="label">区县：</span><span class="value" id="modalDistrict">--</span></div>
+            <div class="modal-field"><i class="ri-price-tag-3-line"></i><span class="label">类型：</span><span class="value" id="modalType">--</span></div>
+            <div class="modal-field"><i class="ri-flag-line"></i><span class="label">阶段：</span><span class="value" id="modalStage">--</span></div>
+            <div class="modal-field"><i class="ri-map-pin-2-line"></i><span class="label">地点：</span><span class="value" id="modalLocation">--</span></div>
+            <!-- 建设单位：已按需求移除 -->
+            <div class="modal-field"><i class="ri-calendar-line"></i><span class="label">发布日期：</span><span class="value" id="modalPublishDate">--</span></div>
+            <div class="modal-field"><i class="ri-wifi-line"></i><span class="label">通信需求：</span><span class="value" id="modalNeeds">--</span></div>
+            <div class="modal-summary"><i class="ri-file-text-line"></i><span class="label">原文摘要：</span><span id="modalSummary">--</span></div>
+            <div class="modal-summary"><i class="ri-cpu-line"></i><span class="label">AI 推理：</span><span id="modalReason">--</span></div>
+            <div class="modal-summary"><i class="ri-draft-line"></i><span class="label">原文全文：</span><span id="modalContent">--</span></div>
+        </div>
+        <div class="modal-footer">
+            <a class="btn-detail" id="modalUrl" href="#" target="_blank" rel="noopener" style="border-color:#3498db;color:#3498db;"><i class="ri-external-link-line"></i> 查看原文</a>
+        </div>
+    </div>
+</div>
+
+<!-- EMAIL_DATA_INJECTION -->
+<script>
+// ====== Global State ======
+var allData = null;
+var filteredProjects = [];
+var filteredProcessedProjects = [];
+var currentPage = 1;
+var processMode = false;
+var processedSet = {};
+var batchSelected = {};  // 批量选择临时状态，仅内存
+var pageSize = 16;  // 4 列 grid 的倍数：每页 4 行卡片正好填满
+var chartLine = null, chartPie = null, chartBar = null;
+var currentChartView = 'calendar';
+var calendarYear = null;
+var calendarMonth = null;
+var filterDate = '';
+var searchKeyword = '';
+var tagKeyword = '';
+var currentModalIdx = -1;
+
+// ====== Data Loading ======
+function loadData() {
+    // ================================================================
+    // TODO: 接入数据库后删除此内嵌数据读取，恢复纯 fetch 模式
+    // ================================================================
+    var embeddedEl = document.getElementById('embedded-data');
+    if (embeddedEl && embeddedEl.textContent) {
+        try {
+            var data = JSON.parse(embeddedEl.textContent);
+            if (data && data.project_list && data.project_list.length > 5) {
+                console.log('Using embedded data (' + data.project_list.length + ' projects)');
+                processLoadedData(data);
+                return;
+            }
+        } catch (e) {
+            console.error('Failed to parse embedded data:', e);
+        }
+    }
+
+    // 数据加载优先级：
+    //   1. /api/report-data（Flask 数据库实时数据，5000 端口可用）
+    //   2. data/report_data.json（管线导出的静态文件，8000 端口预览可用）
+    //   3. data/dashboard_data.json（兜底全量数据）
+    //   4. 内置兜底数据
+    fetch('/api/report-data')
+        .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function(data) {
+            if (data && data.project_list && data.project_list.length > 0) {
+                processLoadedData(data);
+            } else {
+                processLoadedData(getFallbackData());
+            }
+        })
+        .catch(function(err) {
+            console.warn('/api/report-data 不可用（可能非 Flask 环境），回退静态文件:', err);
+            fetch('data/report_data.json')
+                .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                .then(function(data) {
+                    if (data && data.project_list && data.project_list.length > 0) {
+                        processLoadedData(data);
+                    } else {
+                        processLoadedData(getFallbackData());
+                    }
+                })
+                .catch(function(e2) {
+                    console.warn('report_data.json 加载失败，回退 dashboard_data.json:', e2);
+                    fetch('data/dashboard_data.json')
+                        .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                        .then(function(data) { processLoadedData(data); })
+                        .catch(function(e3) {
+                            console.error('加载数据失败:', e3);
+                            processLoadedData(getFallbackData());
+                        });
+                });
+        });
+}
+
+function processLoadedData(data) {
+    allData = data;
+    // filter out 无预警 items
+    if (allData.project_list) {
+        allData.project_list = allData.project_list.filter(function(p) { return p.warning !== '无预警'; });
+    }
+    // 报告数据源已限定本月+本周（report_data.json），不再截断
+    if (allData.warning_pie) {
+        allData.warning_pie = allData.warning_pie.filter(function(d) { return d.name !== '无预警'; });
+    }
+    initFilters(allData);
+    updateSummaryCards();
+    applyFilters();
+    updateTimeDisplay(allData);
+}
+
+function getFallbackData() {
+    // 无假数据（2026-08-20）：fetch 失败时返回空结构，页面显示空态而非伪造数据
+    return {
+        meta: { updated_at: '', total_projects: 0, source: '' },
+        summary: { total: 0, red_warning: 0, yellow_warning: 0, district_count: 0 },
+        warning_pie: [], type_pie: [], stage_pie: [], district_ranking: [], timeline: [],
+        project_list: [],
+    };
+}
+
+// ====== Initialize Filters ======
+function initFilters(data) {
+    var projects = data.project_list || [];
+    var districts = new Set();
+    var months = new Set();
+
+    projects.forEach(function(p) {
+        if (p.district) districts.add(p.district);
+        if (p.date && p.date.length >= 7) months.add(p.date.substring(0, 7));
+    });
+
+    var distSelect = document.getElementById('filterDistrict');
+    Array.from(districts).sort().forEach(function(d) {
+        var opt = document.createElement('option');
+        opt.value = d; opt.textContent = d;
+        distSelect.appendChild(opt);
+    });
+
+    var monthSelect = document.getElementById('filterMonth');
+    Array.from(months).sort().forEach(function(m) {
+        var opt = document.createElement('option');
+        opt.value = m; opt.textContent = m;
+        monthSelect.appendChild(opt);
+    });
+
+    // 阶段筛选：5 类标准阶段
+    var stageSelect = document.getElementById('filterStage');
+    ['规划阶段', '招标阶段', '施工阶段', '已竣工完工', '待核实'].forEach(function(s) {
+        var opt = document.createElement('option');
+        opt.value = s; opt.textContent = s;
+        stageSelect.appendChild(opt);
+    });
+
+    // 类型筛选：从项目类型（project_type）收集去重
+    var typeSet = new Set();
+    projects.forEach(function(p) {
+        if (p.type) typeSet.add(p.type);
+    });
+    var typeSelect = document.getElementById('filterType');
+    Array.from(typeSet).sort().forEach(function(t) {
+        var opt = document.createElement('option');
+        opt.value = t; opt.textContent = t;
+        typeSelect.appendChild(opt);
+    });
+}
+
+// ====== Initialize Processed Filters ======
+function initProcessedFilters(data) {
+    var projects = data.project_list || [];
+    var districts = new Set();
+    var months = new Set();
+
+    projects.forEach(function(p) {
+        if (p.district) districts.add(p.district);
+        if (p.date && p.date.length >= 7) months.add(p.date.substring(0, 7));
+    });
+
+    var distSelect = document.getElementById('filterProcessedDistrict');
+    Array.from(districts).sort().forEach(function(d) {
+        var opt = document.createElement('option');
+        opt.value = d; opt.textContent = d;
+        distSelect.appendChild(opt);
+    });
+
+    var monthSelect = document.getElementById('filterProcessedMonth');
+    Array.from(months).sort().forEach(function(m) {
+        var opt = document.createElement('option');
+        opt.value = m; opt.textContent = m;
+        monthSelect.appendChild(opt);
+    });
+}
+
+// ====== Search (基础层：搜索框) ======
+function onSearchInput() {
+    searchKeyword = document.getElementById('searchInput').value.trim();
+    // 搜索框独立，不影响快速标签状态
+    applyFilters();
+}
+
+// ====== Quick Tags (叠加层：标签) ======
+function setSearch(keyword) {
+    // 标签独立于搜索框：toggle 只影响 tagKeyword
+    if (tagKeyword === keyword) {
+        tagKeyword = '';  // 取消叠加
+    } else {
+        tagKeyword = keyword;  // 切换叠加层
+    }
+    applyFilters();
+}
+
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    searchKeyword = '';
+    // re-dispatches input event so CSS :placeholder-shown works
+    document.getElementById('searchInput').dispatchEvent(new Event('input'));
+    applyFilters();
+}
+
+// ====== Calendar View (日趋势) ======
+var WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六'];
+
+function toggleChartView() {
+    currentChartView = (currentChartView === 'calendar') ? 'line' : 'calendar';
+    var toggleEl = document.getElementById('chartToggle');
+    var lineDom = document.getElementById('chartLine');
+    var calDom = document.getElementById('chartCalendar');
+
+    // Clear date filter when switching views so the other view shows full data
+    filterDate = '';
+
+    if (currentChartView === 'calendar') {
+        calDom.style.display = '';
+        lineDom.style.display = 'none';
+    } else {
+        // 恢复默认"本周"（此前日历视图可能被切到具体月份）
+        document.getElementById('filterMonth').value = '__week__';
+        toggleEl.innerHTML = '<i class="ri-line-chart-line"></i> 月度趋势';
+        calDom.style.display = 'none';
+        lineDom.style.display = '';
+        if (chartLine) { setTimeout(function() { chartLine.resize(); }, 50); }
+    }
+    applyFilters();
+}
+
+function updateCalendarTitle() {
+    var toggleEl = document.getElementById('chartToggle');
+    var now = new Date();
+    var y = (calendarYear !== null) ? calendarYear : now.getFullYear();
+    var m = (calendarMonth !== null) ? calendarMonth : now.getMonth();
+    toggleEl.innerHTML = '<i class="ri-calendar-line"></i> ' + y + '年' + (m + 1) + '月';
+}
+
+function buildCalendarProjects() {
+    // Same filters as applyFilters() but WITHOUT filterDate
+    if (!allData) return [];
+    var district = document.getElementById('filterDistrict').value;
+    var warning = document.getElementById('filterWarning').value;
+    var month = document.getElementById('filterMonth').value;
+    var skw = searchKeyword ? searchKeyword.toLowerCase() : '';
+    var tkw = tagKeyword ? tagKeyword.toLowerCase() : '';
+
+    return (allData.project_list || []).filter(function(p) {
+        if (district && p.district !== district) return false;
+        if (warning && p.warning !== warning) return false;
+        // 本周 / 具体月份 / 全部月份（与 applyFilters 同规则）
+        if (month === '__week__' && !isThisWeek(p)) return false;
+        if (month && month !== '__week__' && (!p.date || p.date.indexOf(month) !== 0)) return false;
+        // NOTE: filterDate intentionally excluded
+        if (skw || tkw) {
+            var haystack = (p.name + '|' + (p.district || '') + '|' + (p.type || '') + '|' + (p.stage || '') + '|' + (p.ai_summary || '')).toLowerCase();
+            if (skw && haystack.indexOf(skw) === -1) return false;
+            if (tkw && haystack.indexOf(tkw) === -1) return false;
+        }
+        return true;
+    });
+}
+
+function renderCalendar() {
+    var container = document.getElementById('chartCalendar');
+    if (!container || container.style.display === 'none') return;
+
+    var now = new Date();
+    var filterMonthVal = document.getElementById('filterMonth').value;
+    var year, month, today;
+
+    // 本周(__week__) 与 全部月份 一样 → 显示当前月日历（今天高亮）
+    if (filterMonthVal && filterMonthVal !== '__week__') {
+        // Calendar follows the month filter dropdown
+        var parts = filterMonthVal.split('-');
+        year = parseInt(parts[0]);
+        month = parseInt(parts[1]) - 1;
+        calendarYear = year;
+        calendarMonth = month;
+        today = -1; // viewing a specific filtered month, no today highlight
+    } else {
+        // "全部月份" / "本周" → always show current month
+        calendarYear = null;
+        calendarMonth = null;
+        year = now.getFullYear();
+        month = now.getMonth();
+        today = now.getDate();
+    }
+
+    updateCalendarTitle();
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Count projects per day — use a dataset that excludes filterDate
+    // so clicking a date doesn't make all other dates unclickable
+    var calendarProjects = buildCalendarProjects();
+    var dayCount = {};
+    calendarProjects.forEach(function(p) {
+        if (!p.date) return;
+        // p.date format: "2026-07-23" or "2026-07"
+        var parts = p.date.split('-');
+        if (parts.length < 3) return;
+        var dYear = parseInt(parts[0]);
+        var dMonth = parseInt(parts[1]) - 1;
+        var dDay = parseInt(parts[2]);
+        if (dYear === year && dMonth === month) {
+            dayCount[dDay] = (dayCount[dDay] || 0) + 1;
+        }
+    });
+
+    // Build weekday header
+    var html = '<div class="calendar-weekdays">';
+    WEEKDAY_LABELS.forEach(function(w) {
+        html += '<span>' + w + '</span>';
+    });
+    html += '</div><div class="calendar-grid">';
+
+    // First day of month determines starting column
+    var firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+
+    // Empty cells before first day
+    for (var i = 0; i < firstDay; i++) {
+        html += '<div class="day-box" style="visibility:hidden"></div>';
+    }
+
+    // Day cells
+    for (var d = 1; d <= daysInMonth; d++) {
+        var isToday = (d === today);
+        var hasProjects = !!dayCount[d];
+        var cls = 'day-box';
+        if (hasProjects) cls += ' active';
+        else cls += ' inactive';
+        if (isToday) cls += ' today';
+        var title = hasProjects ? (dayCount[d] + ' 个项目') : '';
+        var onclick = hasProjects ? (' onclick="filterByDay(' + year + ',' + (month + 1) + ',' + d + ')"') : '';
+        html += '<div class="' + cls + '" title="' + title + '"' + onclick + '>' + d + '</div>';
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function filterByDay(year, month, day) {
+    var dateStr = year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+    // Toggle: clicking same date again clears filter
+    if (filterDate === dateStr) {
+        filterDate = '';
+    } else {
+        filterDate = dateStr;
+    }
+    applyFilters();
+}
+
+// ====== Apply Filters ======
+function applyFilters() {
+    if (!allData) return;
+    var district = document.getElementById('filterDistrict').value;
+    var warning = document.getElementById('filterWarning').value;
+    var month = document.getElementById('filterMonth').value;
+    var stage = document.getElementById('filterStage').value;
+    var type = document.getElementById('filterType').value;
+    var skw = searchKeyword ? searchKeyword.toLowerCase() : '';
+    var tkw = tagKeyword ? tagKeyword.toLowerCase() : '';
+
+    filteredProjects = (allData.project_list || []).filter(function(p) {
+        // 叠加筛选：区县 + 预警 + 月份/本周 + 阶段 + 类型（AND 关系）
+        if (district && p.district !== district) return false;
+        if (warning && p.warning !== warning) return false;
+        // 时间筛选：本周(__week__) / 具体月份 / 全部月份(空)
+        if (month === '__week__' && !isThisWeek(p)) return false;
+        if (month && month !== '__week__' && (!p.date || p.date.indexOf(month) !== 0)) return false;
+        if (filterDate && (!p.date || p.date !== filterDate)) return false;
+        // 阶段筛选
+        if (stage && p.stage !== stage) return false;
+        // 类型筛选
+        if (type && p.type !== type) return false;
+        // 搜索框（基础层）和标签（叠加层）各自独立过滤
+        if (skw || tkw) {
+            var haystack = (p.name + '|' + (p.district || '') + '|' + (p.type || '') + '|' + (p.stage || '') + '|' + (p.ai_summary || '')).toLowerCase();
+            if (skw && haystack.indexOf(skw) === -1) return false;
+            if (tkw && haystack.indexOf(tkw) === -1) return false;
+        }
+        return true;
+    });
+
+    currentPage = 1;
+    updateLineChart();
+    updateBarChart();
+    updateProjectList();
+    renderPagination();
+}
+
+// ====== Apply Processed Filters (独立筛选) ======
+function applyProcessedFilters() {
+    if (!allData) return;
+    var district = document.getElementById('filterProcessedDistrict').value;
+    var warning = document.getElementById('filterProcessedWarning').value;
+    var month = document.getElementById('filterProcessedMonth').value;
+    var search = (document.getElementById('searchProcessedInput').value || '').trim().toLowerCase();
+
+    filteredProcessedProjects = (allData.project_list || []).filter(function(p) {
+        if (district && p.district !== district) return false;
+        if (warning && p.warning !== warning) return false;
+        if (month && (!p.date || p.date.indexOf(month) !== 0)) return false;
+        if (search) {
+            var haystack = (p.name + '|' + (p.district || '') + '|' + (p.type || '') + '|' + (p.stage || '') + '|' + (p.ai_summary || '')).toLowerCase();
+            if (haystack.indexOf(search) === -1) return false;
+        }
+        return true;
+    });
+
+    // 控制搜索清除按钮显隐
+    var clearBtn = document.getElementById('searchProcessedClear');
+    if (clearBtn) {
+        clearBtn.style.display = search ? 'block' : 'none';
+    }
+    var searchIcon = document.querySelector('#processedRow .search-icon');
+    if (searchIcon) {
+        searchIcon.style.display = search ? 'none' : '';
+    }
+
+    updateProcessedPanel();
+}
+
+function clearProcessedSearch() {
+    document.getElementById('searchProcessedInput').value = '';
+    applyProcessedFilters();
+}
+
+// ====== Filter by Warning (from card click, toggle) ======
+function filterByWarning(level) {
+    var select = document.getElementById('filterWarning');
+    // 与图表点击行为一致：同一值再点 → 取消筛选
+    select.value = (select.value === level) ? '' : level;
+    applyFilters();
+}
+
+// ====== Summary Cards（三个数字 = 本周口径；较上月对比按月） ======
+function isThisWeek(p) {
+    if (!p.date) return false;
+    var d = new Date(p.date.replace(/-/g, '/'));
+    if (isNaN(d.getTime())) return false;
+    // 自然周（周一起）
+    var now = new Date();
+    var monday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var day = monday.getDay();
+    monday.setDate(monday.getDate() + (day === 0 ? -6 : 1 - day));
+    return d >= monday;
+}
+function updateSummaryCards() {
+    var allProjects = allData ? (allData.project_list || []) : [];
+    var weekProjects = allProjects.filter(isThisWeek);
+    var total = weekProjects.length;
+    var reds = weekProjects.filter(function(p) { return p.warning === '红色预警'; }).length;
+    var yellows = weekProjects.filter(function(p) { return p.warning === '黄色预警'; }).length;
+
+    document.getElementById('numTotal').textContent = total;
+    document.getElementById('numRed').textContent = reds;
+    document.getElementById('numYellow').textContent = yellows;
+
+    // week-over-week comparison（本周 vs 上周，自然周：周一起）
+    var now = new Date();
+    var thisMonday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var dayNow = thisMonday.getDay();
+    thisMonday.setDate(thisMonday.getDate() + (dayNow === 0 ? -6 : 1 - dayNow));
+    var nextMonday = new Date(thisMonday);
+    nextMonday.setDate(nextMonday.getDate() + 7);
+    var lastMonday = new Date(thisMonday);
+    lastMonday.setDate(lastMonday.getDate() - 7);
+
+    function inWeekRange(p, start, end) {
+        if (!p.date) return false;
+        var d = new Date(p.date.replace(/-/g, '/'));
+        return !isNaN(d.getTime()) && d >= start && d < end;
+    }
+    // 本周 = [本周一, 下周一)；上周 = [上周一, 本周一)
+    var lastTotal = allProjects.filter(function(p) { return inWeekRange(p, lastMonday, thisMonday); }).length;
+    var lastRed = allProjects.filter(function(p) { return p.warning === '红色预警' && inWeekRange(p, lastMonday, thisMonday); }).length;
+    var lastYellow = allProjects.filter(function(p) { return p.warning === '黄色预警' && inWeekRange(p, lastMonday, thisMonday); }).length;
+
+    function trendHtml(cur, prev) {
+        if (cur === prev) return '<span class="card-trend flat">持平</span>';
+        var diff = cur - prev;
+        var arrow = diff > 0 ? '↑' : '↓';
+        var cls = diff > 0 ? 'up' : 'down';
+        return '<span class="card-trend ' + cls + '">较上周 ' + arrow + ' ' + Math.abs(diff) + '</span>';
+    }
+
+    document.getElementById('trendTotal').innerHTML = trendHtml(total, lastTotal);
+    document.getElementById('trendRed').innerHTML = trendHtml(reds, lastRed);
+    document.getElementById('trendYellow').innerHTML = trendHtml(yellows, lastYellow);
+}
+
+// ====== Line Chart (Monthly Trend，全年全量，不受本周默认筛选影响) ======
+function updateLineChart() {
+    if (typeof echarts === 'undefined') return;
+    var dom = document.getElementById('chartLine');
+    if (!chartLine) chartLine = echarts.init(dom);
+
+    var monthMap = {};
+    // 无日期记录并入当前月（不单独显示"未知"节点）
+    var now = new Date();
+    var curMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    (allData ? (allData.project_list || []) : []).forEach(function(p) {
+        var m = p.date ? p.date.substring(0, 7) : curMonth;
+        monthMap[m] = (monthMap[m] || 0) + 1;
+    });
+    var months = Object.keys(monthMap).sort();
+    var values = months.map(function(m) { return monthMap[m]; });
+
+    if (months.length === 0) {
+        chartLine.setOption({ title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#bdc3c7', fontSize: 14 } } }, true);
+        return;
+    }
+
+    chartLine.setOption({
+        tooltip: { trigger: 'axis' },
+        grid: { left: 40, right: 20, top: 20, bottom: 32 },
+        xAxis: { type: 'category', data: months, triggerEvent: true, axisLine: { lineStyle: { color: '#e0e0e0' } }, axisTick: { show: false }, axisLabel: { color: '#95a5a6' } },
+        yAxis: { type: 'value', minInterval: 1, splitLine: { lineStyle: { color: '#f0f0f0', type: 'dashed' } }, axisLabel: { color: '#95a5a6' } },
+        series: [{
+            name: '项目数', type: 'line', data: values,
+            smooth: true, symbol: 'circle', symbolSize: 7,
+            lineStyle: { color: '#3498db', width: 2.5 },
+            itemStyle: { color: '#3498db' },
+            emphasis: { scale: true, scaleSize: 12, itemStyle: { color: '#2980b9', shadowBlur: 8, shadowColor: 'rgba(52,152,219,0.4)' } },
+            areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: 'rgba(52,152,219,0.2)' },
+                { offset: 1, color: 'rgba(52,152,219,0.02)' }
+            ])}
+        }]
+    }, true);
+
+    // 点击月份 → 筛选该月数据（再点同月取消筛选）
+    chartLine.off('click');
+    chartLine.on('click', function(params) {
+        var month = null;
+        if (params.componentType === 'series') month = params.name;
+        else if (params.componentType === 'xAxis') month = params.value;
+        if (month) {
+            var select = document.getElementById('filterMonth');
+            select.value = (select.value === month) ? '' : month;
+            applyFilters();
+        }
+    });
+}
+
+// ====== Pie Chart (Warning Distribution，跟随 applyFilters 统一口径：默认本周) ======
+function updatePieChart() {
+    if (typeof echarts === 'undefined') return;
+    var dom = document.getElementById('chartPie');
+    if (!dom) return;  // report2：预警分布面板已删除
+    if (!chartPie) chartPie = echarts.init(dom);
+
+    var reds = filteredProjects.filter(function(p) { return p.warning === '红色预警'; }).length;
+    var yellows = filteredProjects.filter(function(p) { return p.warning === '黄色预警'; }).length;
+    var total = filteredProjects.length;
+
+    if (total === 0) {
+        chartPie.setOption({ title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#bdc3c7', fontSize: 14 } } }, true);
+        return;
+    }
+
+    var totalCount = reds + yellows;
+    chartPie.setOption({
+        tooltip: { trigger: 'item', formatter: '{b}: {c} 条 ({d}%)' },
+        legend: { show: false },
+        graphic: [{
+            type: 'text',
+            left: 'center',
+            top: 'center',
+            style: { text: totalCount + '\n个项目', textAlign: 'center', fill: '#2c3e50', fontSize: 28, fontWeight: 700, lineHeight: 32 },
+            silent: true
+        }],
+        series: [{
+            type: 'pie', radius: ['52%', '80%'], center: ['50%', '50%'],
+            avoidLabelOverlap: true,
+            itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 4 },
+            label: {
+                show: true, position: 'inside',
+                formatter: '{b}\n{d}%', fontSize: 15, fontWeight: 700,
+                color: '#2c3e50'
+            },
+            emphasis: { label: { fontSize: 18, fontWeight: 'bold' }, scaleSize: 8 },
+            cursor: 'pointer',
+            data: [
+                { value: reds, name: '红色预警', itemStyle: { color: '#e74c3c' } },
+                { value: yellows, name: '黄色预警', itemStyle: { color: '#f39c12' } }
+            ].filter(function(d) { return d.value > 0; })
+        }]
+    }, true);
+
+    chartPie.off('click');
+    chartPie.on('click', function(params) {
+        if (params.componentType === 'series') {
+            var select = document.getElementById('filterWarning');
+            select.value = (select.value === params.name) ? '' : params.name;
+            applyFilters();
+        }
+    });
+}
+
+// ====== Bar Chart (District Ranking) ======
+function updateBarChart() {
+    if (typeof echarts === 'undefined') return;
+    var dom = document.getElementById('chartBar');
+    if (!chartBar) chartBar = echarts.init(dom);
+
+    // 烟台13区县完整列表（即使数据为0也显示）
+    var ALL_DISTRICTS = ['芝罘区','莱山区','福山区','牟平区','烟台开发区','烟台高新区','海阳市','莱阳市','龙口市','莱州市','蓬莱区','招远市','栖霞市'];
+
+    var distMap = {};
+    filteredProjects.forEach(function(p) {
+        if (!p.district) return;
+        distMap[p.district] = (distMap[p.district] || 0) + 1;
+    });
+    // 按全量列表构建 entries，保留顺序
+    var entries = [];
+    ALL_DISTRICTS.forEach(function(d) {
+        entries.push([d, distMap[d] || 0]);
+    });
+    // 按数值降序排列
+    entries.sort(function(a, b) { return b[1] - a[1]; });
+    var names = entries.map(function(e) { return e[0]; });
+    var values = entries.map(function(e) { return e[1]; });
+
+    if (entries.length === 0) {
+        chartBar.setOption({ title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#bdc3c7', fontSize: 14 } } }, true);
+        return;
+    }
+
+    var barColors = ['#3498db','#5dade2','#85c1e9','#aed6f1','#2ecc71','#58d68d','#82e0aa','#f39c12','#f8c471','#e74c3c','#9b59b6','#e91e63','#00bcd4','#ff5722','#607d8b','#8bc34a','#ff9800','#03a9f4','#795548','#cddc39'];
+
+    chartBar.setOption({
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+        grid: { left: 20, right: 30, top: 20, bottom: 60 },
+        xAxis: { type: 'category', data: names, axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#2c3e50', fontWeight: 500, rotate: names.length > 5 ? 30 : 0 } },
+        yAxis: { type: 'value', minInterval: 1, splitLine: { lineStyle: { color: '#f0f0f0', type: 'dashed' } }, axisLabel: { color: '#95a5a6' } },
+        series: [{
+            type: 'bar', data: values.map(function(v, i) {
+                return { value: v, itemStyle: { color: barColors[i % barColors.length], borderRadius: [6, 6, 0, 0] } };
+            }),
+            barWidth: 22, cursor: 'pointer',
+            emphasis: { itemStyle: { shadowBlur: 6, shadowColor: 'rgba(0,0,0,0.15)' } },
+            label: { show: true, position: 'top', color: '#7f8c8d', fontSize: 12 }
+        }]
+    }, true);
+
+    chartBar.off('click');
+    chartBar.on('click', function(params) {
+        if (params.componentType === 'series') {
+            var select = document.getElementById('filterDistrict');
+            select.value = (select.value === params.name) ? '' : params.name;
+            filterDate = '';  // 切换区县时清除日历日期筛选
+            applyFilters();
+        }
+    });
+}
+
+// ====== 卡片正文：真实内容（AI 摘要，无则用正文前 120 字） ======
+function cardSummary(p) {
+    if (p.ai_summary) return p.ai_summary;
+    var c = p.content ? String(p.content) : '';
+    if (!c) return '';
+    return c.slice(0, 120) + (c.length > 120 ? '…' : '');
+}
+
+// ====== Project Card List ======
+function updateProjectList() {
+    var container = document.getElementById('projectList');
+
+    // 过滤掉已处理的项目
+    var unprocessed = filteredProjects.filter(function(p) {
+        return !processedSet[getProjectKey(p)];
+    });
+
+    if (unprocessed.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="ri-inbox-2-line"></i>暂无待处理项目</div>';
+        return;
+    }
+
+    var start = (currentPage - 1) * pageSize;
+    var page = unprocessed.slice(start, start + pageSize);
+
+    container.innerHTML = page.map(function(p, i) {
+        var globalIdx = start + i;
+        var pkey = getProjectKey(p);
+        var cardClass = p.warning === '红色预警' ? 'red' : 'yellow';
+        var warnBadge = p.warning === '红色预警'
+            ? '<span class="badge warn-red"><i class="ri-alert-fill"></i> 红色预警</span>'
+            : '<span class="badge warn-yellow"><i class="ri-error-warning-fill"></i> 黄色预警</span>';
+
+        // highlight search + tag keywords in title
+        var titleHtml = escapeHtml(p.name || '--');
+        [searchKeyword, tagKeyword].forEach(function(kw) {
+            if (!kw) return;
+            var escaped = escapeHtml(kw);
+            var regex = new RegExp('(' + escaped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+            titleHtml = titleHtml.replace(regex, '<span class="highlight">$1</span>');
+        });
+
+        // process checkbox (batch selection mode)
+        var checkClass = 'process-check';
+        if (processMode) checkClass += ' visible';
+        if (processMode && batchSelected[pkey]) checkClass += ' checked';
+        var checkboxHtml = '<div class="' + checkClass + '" onclick="event.stopPropagation(); toggleBatchSelect(\'' + escapeHtml(pkey).replace(/'/g, "\\'") + '\')"><div class="process-circle"><i class="ri-check-line"></i></div></div>';
+
+        return '<div class="project-card ' + cardClass + '" onclick="showDetailByKey(\'' + escapeHtml(pkey).replace(/'/g, "\\'") + '\')" style="cursor:pointer">' +
+            checkboxHtml +
+            '<div class="project-main">' +
+                '<div class="project-title" title="' + escapeHtml(p.name || '') + '">' + titleHtml + '</div>' +
+                '<div class="card-filler">' + escapeHtml(cardSummary(p)) + '</div>' +
+                '<div class="project-meta">' +
+                    warnBadge +
+                    '<span class="badge type"><i class="ri-price-tag-3-line"></i> ' + escapeHtml(p.type || '--') + '</span>' +
+                    (p.stage ? '<span class="badge stage"><i class="ri-flashlight-line"></i> ' + escapeHtml(p.stage) + '</span>' : '') +
+                '</div>' +
+                '<span class="district-tag">' + escapeHtml(p.district || '') + '</span>' +
+            '</div>' +
+            '</div>';
+    }).join('');
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ====== Process Mode (项目处理标记) ======
+function getProjectKey(p) {
+    return p.url || (p.name + '|' + (p.date || ''));
+}
+
+function loadProcessedProjects() {
+    // 已处理状态来自数据文件（report_data.json 的 processed 字段，数据库导出），
+    // 不再使用 localStorage（旧版残留数据已废弃）
+    processedSet = {};
+    if (allData && allData.project_list) {
+        allData.project_list.forEach(function(p) {
+            if (p.processed === 1) processedSet[getProjectKey(p)] = '已处理';
+        });
+    }
+}
+
+function toggleBatchSelect(key) {
+    if (batchSelected[key]) {
+        delete batchSelected[key];
+    } else {
+        batchSelected[key] = true;
+    }
+    updateProjectList();  // 仅刷新复选框视觉，不操作 processedSet
+}
+
+function toggleProcessMode() {
+    var btn = document.getElementById('btnProcess');
+    if (processMode) {
+        // === 退出批量模式：提交选择 ===
+        var keys = Object.keys(batchSelected);
+        var count = 0;
+        for (var i = 0; i < keys.length; i++) {
+            if (batchSelected[keys[i]]) count++;
+        }
+        if (count > 0) {
+            var now = new Date();
+            var ts = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+            for (var j = 0; j < keys.length; j++) {
+                if (batchSelected[keys[j]]) { processedSet[keys[j]] = ts; }
+            }
+            showToast('已处理 ' + count + ' 条（会话内有效，刷新后以数据文件为准）');
+        }
+        batchSelected = {};
+        processMode = false;
+        btn.classList.remove('active');
+        btn.innerHTML = '<i class="ri-check-double-line"></i> 处理';
+        updateProjectList();
+        updateProcessedPanel();
+        renderPagination();
+    } else {
+        // === 进入批量模式 ===
+        batchSelected = {};
+        processMode = true;
+        btn.classList.add('active');
+        btn.innerHTML = '<i class="ri-check-line"></i> 完成';
+        updateProjectList();
+    }
+}
+
+function showToast(message) {
+    var toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = '<i class="ri-check-line"></i> ' + message;
+    document.body.appendChild(toast);
+    setTimeout(function() {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 2500);
+}
+
+// ====== 导出 Excel（当前筛选条件 + 透视统计，直接可用） ======
+// 交叉表：行=rowKey 维度，列=colKey 维度，值=项目数（含合计）
+function buildCrossTable(rows, rowKey, colKey) {
+    var rowNames = [], colNames = [];
+    rows.forEach(function(r) {
+        if (rowNames.indexOf(r[rowKey]) === -1) rowNames.push(r[rowKey]);
+        if (colNames.indexOf(r[colKey]) === -1) colNames.push(r[colKey]);
+    });
+    var matrix = {};
+    rows.forEach(function(r) {
+        var key = r[rowKey] + '|' + r[colKey];
+        matrix[key] = (matrix[key] || 0) + 1;
+    });
+    var header = [rowKey].concat(colNames, ['合计']);
+    var data = rowNames.map(function(rn) {
+        var row = [rn], total = 0;
+        colNames.forEach(function(cn) {
+            var v = matrix[rn + '|' + cn] || 0;
+            row.push(v); total += v;
+        });
+        row.push(total);
+        return row;
+    });
+    var totalRow = ['合计'];
+    colNames.forEach(function(cn) {
+        var v = 0;
+        rowNames.forEach(function(rn) { v += matrix[rn + '|' + cn] || 0; });
+        totalRow.push(v);
+    });
+    var grand = 0;
+    colNames.forEach(function(cn) {
+        rowNames.forEach(function(rn) { grand += matrix[rn + '|' + cn] || 0; });
+    });
+    totalRow.push(grand);
+    data.push(totalRow);
+    return { header: header, data: data };
+}
+
+function exportExcel() {
+    if (typeof ExcelJS === 'undefined') { alert('Excel 组件加载失败，请检查网络后重试'); return; }
+    if (!filteredProjects || !filteredProjects.length) { showToast('当前筛选条件下无数据'); return; }
+
+    var rows = filteredProjects.map(function(p) {
+        var needs = p.telecom_needs;
+        if (typeof needs === 'string') { try { needs = JSON.parse(needs); } catch (e) { needs = null; } }
+        if (Array.isArray(needs)) needs = needs.join('、');
+        return {
+            '项目名称': p.name || '',
+            '区县': p.district || '',
+            '项目类型': p.type || '',
+            '阶段': p.stage_detail || p.stage || '',
+            '预警级别': p.warning || '',
+            '发布日期': p.date || p.publish_date || '',
+            '地点': p.location || '',
+            '投资额': p.investment || '',
+            '规模': p.scale || '',
+            '通信需求': needs || '',
+            'AI摘要': p.ai_summary || '',
+            '原文链接': p.url || '',
+        };
+    });
+
+    var wb = new ExcelJS.Workbook();
+    var wbProps = wb.properties;
+    wbProps.title = '项目明细导出';
+
+    // Sheet1：项目明细（带自动筛选）
+    var ws = wb.addWorksheet('项目明细');
+    ws.columns = [
+        { header: '项目名称', key: 'name', width: 45 }, { header: '区县', key: 'district', width: 10 },
+        { header: '项目类型', key: 'type', width: 12 }, { header: '阶段', key: 'stage', width: 14 },
+        { header: '预警级别', key: 'warning', width: 10 }, { header: '发布日期', key: 'date', width: 12 },
+        { header: '地点', key: 'location', width: 40 }, { header: '投资额', key: 'investment', width: 16 },
+        { header: '规模', key: 'scale', width: 16 }, { header: '通信需求', key: 'needs', width: 30 },
+        { header: 'AI摘要', key: 'ai_summary', width: 50 }, { header: '原文链接', key: 'url', width: 60 },
+    ];
+    rows.forEach(function(r) { ws.addRow(r); });
+    ws.autoFilter = { from: 'A1', to: 'L' + (rows.length + 1) };
+    ws.getRow(1).font = { bold: true };
+
+    // Sheet2：区县 × 类型 透视（含合计）
+    var t1 = buildCrossTable(rows, '区县', '项目类型');
+    var ws2 = wb.addWorksheet('区县×类型透视');
+    ws2.addRow(t1.header);
+    t1.data.forEach(function(r) { ws2.addRow(r); });
+    ws2.autoFilter = { from: 'A1', to: ws2.getColumn(t1.header.length).letter + (t1.data.length + 1) };
+    ws2.getRow(1).font = { bold: true };
+
+    // Sheet3：区县 × 预警级别 透视（含合计）
+    var t2 = buildCrossTable(rows, '区县', '预警级别');
+    var ws3 = wb.addWorksheet('区县×预警透视');
+    ws3.addRow(t2.header);
+    t2.data.forEach(function(r) { ws3.addRow(r); });
+    ws3.autoFilter = { from: 'A1', to: ws3.getColumn(t2.header.length).letter + (t2.data.length + 1) };
+    ws3.getRow(1).font = { bold: true };
+
+    // Sheet4：区县数据柱状图（echarts 当前图表 PNG 图片）
+    var ws4 = wb.addWorksheet('区县柱状图');
+    if (typeof chartBar !== 'undefined' && chartBar && typeof chartBar.getDataURL === 'function') {
+        try {
+            var png = chartBar.getDataURL({ pixelRatio: 2, backgroundColor: '#fff' });
+            var imgId = wb.addImage({ base64: png.split(',')[1], extension: 'png' });
+            ws4.addImage(imgId, { tl: { col: 0, row: 0 }, ext: { width: 720, height: 400 } });
+        } catch (e) {
+            console.warn('柱状图导出失败:', e);
+        }
+    }
+    ws4.getCell('A22').value = '注：柱状图为当前筛选条件下的区县项目数';
+
+    var now = new Date();
+    var stamp = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+    wb.xlsx.writeBuffer().then(function(buf) {
+        var blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = '项目明细_' + stamp + '.xlsx';
+        a.click();
+        setTimeout(function() { URL.revokeObjectURL(a.href); }, 3000);
+        showToast('已导出 ' + rows.length + ' 条（含透视表+柱状图）');
+    });
+}
+
+function toggleProcessed(url) {
+    if (processedSet[url]) {
+        delete processedSet[url];
+    } else {
+        var now = new Date();
+        var ts = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+        processedSet[url] = ts;
+        showToast('已处理（会话内有效，刷新后以数据文件为准）');
+    }
+    // re-render both panels
+    updateProjectList();
+    updateProcessedPanel();
+    renderPagination();
+}
+
+function toggleModalProcessed() {
+    if (currentModalIdx < 0 || currentModalIdx >= filteredProjects.length) return;
+    var p = filteredProjects[currentModalIdx];
+    var pkey = getProjectKey(p);
+    toggleProcessed(pkey);
+    closeModal();
+}
+
+// ====== Processed Panel (已处理卡片网格) ======
+function updateProcessedPanel() {
+    var container = document.getElementById('processedPanelList');
+    var countEl = document.getElementById('processedCount');
+
+    // 从 filteredProcessedProjects (独立筛选) 中筛选已处理的项目
+    var source = filteredProcessedProjects.length > 0 || !allData ? filteredProcessedProjects : (allData.project_list || []);
+    var processed = source.filter(function(p) {
+        return !!processedSet[getProjectKey(p)];
+    });
+
+    countEl.textContent = '(' + processed.length + ')';
+
+    if (processed.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="ri-inbox-2-line"></i>暂无已处理项目</div>';
+        return;
+    }
+
+    container.innerHTML = processed.map(function(p) {
+        var pkey = getProjectKey(p);
+        var warnBadge = p.warning === '红色预警'
+            ? '<span class="badge warn-red"><i class="ri-alert-fill"></i> 红色预警</span>'
+            : '<span class="badge warn-yellow"><i class="ri-error-warning-fill"></i> 黄色预警</span>';
+        var procTime = processedSet[pkey] || '';
+        var timeHtml = procTime ? '<div class="processed-time"><i class="ri-time-line"></i> ' + escapeHtml(procTime) + '</div>' : '';
+
+        return '<div class="project-card" onclick="showDetailByKey(\'' + escapeHtml(pkey).replace(/'/g, "\\'") + '\')" style="cursor:pointer">' +
+            '<div class="project-main">' +
+                '<div class="project-title" title="' + escapeHtml(p.name || '') + '">' + escapeHtml(p.name || '--') + '</div>' +
+                '<div class="card-filler">' + escapeHtml(cardSummary(p)) + '</div>' +
+                '<div class="project-meta">' +
+                    warnBadge +
+                    '<span class="badge type"><i class="ri-price-tag-3-line"></i> ' + escapeHtml(p.type || '--') + '</span>' +
+                    (p.stage ? '<span class="badge stage"><i class="ri-flashlight-line"></i> ' + escapeHtml(p.stage) + '</span>' : '') +
+                '</div>' +
+                '<span class="district-tag">' + escapeHtml(p.district || '') + '</span>' +
+                timeHtml +
+            '</div>' +
+            '</div>';
+    }).join('');
+}
+
+// ====== Pagination ======
+function renderPagination() {
+    var container = document.getElementById('pagination');
+    // 未处理项目数
+    var unprocessedCount = filteredProjects.filter(function(p) {
+        return !processedSet[getProjectKey(p)];
+    }).length;
+    if (unprocessedCount === 0) {
+        container.innerHTML = '';
+        return;
+    }
+    var totalPages = Math.ceil(unprocessedCount / pageSize);
+    if (totalPages <= 1) {
+        container.innerHTML = '<span class="page-info">共 ' + unprocessedCount + ' 条</span>';
+        return;
+    }
+    var html = '';
+    html += '<button ' + (currentPage <= 1 ? 'disabled' : '') + ' onclick="goToPage(' + (currentPage - 1) + ')">‹ 上一页</button>';
+    // 省略号分页：首尾 + 当前页前后各 1，页数多时不撑开布局
+    var shown = [];
+    for (var p = 1; p <= totalPages; p++) {
+        if (p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1) shown.push(p);
+    }
+    var prev = 0;
+    shown.forEach(function(p) {
+        if (p - prev > 1) html += '<span class="page-ellipsis">…</span>';
+        html += '<button class="' + (p === currentPage ? 'active' : '') + '" onclick="goToPage(' + p + ')">' + p + '</button>';
+        prev = p;
+    });
+    html += '<button ' + (currentPage >= totalPages ? 'disabled' : '') + ' onclick="goToPage(' + (currentPage + 1) + ')">下一页 ›</button>';
+    html += '<span class="page-info">共 ' + unprocessedCount + ' 条</span>';
+    html += '<select onchange="changePageSize(this.value)">';
+    [16, 32, 64].forEach(function(n) {
+        html += '<option value="' + n + '"' + (pageSize === n ? ' selected' : '') + '>每页 ' + n + ' 条</option>';
+    });
+    html += '</select>';
+    container.innerHTML = html;
+}
+
+function goToPage(page) {
+    var unprocessedCount = filteredProjects.filter(function(p) {
+        return !processedSet[getProjectKey(p)];
+    }).length;
+    var totalPages = Math.ceil(unprocessedCount / pageSize);
+    if (page < 1 || page > totalPages) return;
+    currentPage = page;
+    updateProjectList();
+    renderPagination();
+    document.getElementById('projectList').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function changePageSize(size) {
+    pageSize = parseInt(size);
+    currentPage = 1;
+    updateProjectList();
+    renderPagination();
+}
+
+// ====== Detail Modal ======
+function findProjectByKey(key) {
+    for (var i = 0; i < filteredProjects.length; i++) {
+        if (getProjectKey(filteredProjects[i]) === key) return filteredProjects[i];
+    }
+    return null;
+}
+
+function showDetailByKey(key) {
+    var p = findProjectByKey(key);
+    if (!p) return;
+    currentModalIdx = filteredProjects.indexOf(p);
+    renderDetailModal(p);
+}
+
+function showDetail(idx) {
+    var p = filteredProjects[idx];
+    if (!p) return;
+    currentModalIdx = idx;
+    renderDetailModal(p);
+}
+
+function renderDetailModal(p) {
+    document.getElementById('modalTitle').textContent = p.name || '--';
+    document.getElementById('modalDistrict').textContent = p.district || '--';
+    document.getElementById('modalType').textContent = p.type || '--';
+    // 阶段显示完整描述（stage_detail），与 2D 详情卡片一致；无则显示 5 类 stage
+    document.getElementById('modalStage').textContent = p.stage_detail || p.stage || '--';
+    document.getElementById('modalLocation').textContent = p.location || '--';
+    // 建设单位：已按需求移除
+    document.getElementById('modalPublishDate').textContent = p.date || p.publish_date || '--';
+    // 通信需求（JSON 字符串 → 标签文本，与 2D 卡片一致）
+    var needs = p.telecom_needs;
+    if (typeof needs === 'string') { try { needs = JSON.parse(needs); } catch (e) { needs = null; } }
+    if (Array.isArray(needs)) needs = needs.join('、');
+    document.getElementById('modalNeeds').textContent = needs || '--';
+    document.getElementById('modalSummary').textContent = p.ai_summary || '暂无摘要';
+    document.getElementById('modalReason').textContent = p.ai_reason || '--';
+    document.getElementById('modalContent').textContent = p.content || '--';
+    var urlEl = document.getElementById('modalUrl');
+    if (p.url) {
+        urlEl.href = p.url;
+        urlEl.style.display = 'inline-flex';
+    } else {
+        urlEl.style.display = 'none';
+    }
+    document.getElementById('modalOverlay').classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+// ====== Time Display ======
+function updateTimeDisplay(data) {
+    var time = (data.meta && data.meta.updated_at) ? data.meta.updated_at : '--';
+    document.getElementById('updateTime').textContent = time;
+    document.getElementById('footerTime').textContent = time;
+}
+
+// ====== Chart Resize ======
+window.addEventListener('resize', function() {
+    if (chartLine) chartLine.resize();
+    if (chartPie) chartPie.resize();
+    if (chartBar) chartBar.resize();
+});
+
+// ====== Keyboard ======
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal();
+    // Ctrl+K or / to focus search
+    if ((e.ctrlKey && e.key === 'k') || (e.key === '/' && document.activeElement !== document.getElementById('searchInput'))) {
+        e.preventDefault();
+        document.getElementById('searchInput').focus();
+    }
+});
+
+// ====== Init ======
+// Init: wait for ECharts to be available before loading data
+function initWhenReady() {
+    if (typeof echarts === 'undefined') {
+        setTimeout(initWhenReady, 100);
+        return;
+    }
+    loadData();
+}
+initWhenReady();
+</script>
+
+</body>
+</html>

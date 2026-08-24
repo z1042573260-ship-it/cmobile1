@@ -1,0 +1,569 @@
+@charset "utf-8";
+/* CSS Document */
+*{
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box}
+html{overflow:hidden; background:#102736;}
+*,body{padding:0px;	margin:0px;font-family: "微软雅黑";}
+body{color:#fff;font-size: 16px; background: #102736; display:flex; flex-direction:column;}
+@font-face{font-family:electronicFont;src:url(../font/DS-DIGIT.TTF)}
+html,body{min-height: 100%;}
+li{ list-style-type:none;}
+table{}
+i{ margin:0px; padding:0px; text-indent:0px;}
+img{ border:none; max-width: 100%;}
+a{ text-decoration:none; color:#fff;}
+a.active,a:focus{ outline:none!important; text-decoration:none;}
+ol,ul,p,h1,h2,h3,h4,h5,h6{ padding:0; margin:0}
+a:hover{ color:#06c; text-decoration: none!important}
+.clearfix:after, .clearfix:before {display: table;content: " "}
+ .clearfix:after {clear: both}
+.pulll_left{float:left;}
+.pulll_right{float:right;}
+i{font-style: normal;}
+.text-w{color: #ffe400}
+.text-d{color: #ff6316}
+.text-s{color: #14e144}
+.text-b{color: #07e5ff}
+
+/* ---------------- 顶部 Header 整体布局 ---------------- */
+.head {
+    position: relative;
+    z-index: 10;
+    height: 80px;
+    margin: 0 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    box-sizing: border-box;
+    background: rgba(10, 38, 68, 0.55);
+}
+
+/* 矢量背景置底，不阻挡按钮点击 */
+.head-bg-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* ---------------- 左右导航区域 ---------------- */
+.head-nav {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    width: 33%;
+    margin-top: 12px;
+}
+.head-nav.nav-left { justify-content: flex-start;left: 270px;}
+.head-nav.nav-right { justify-content: flex-end;right: 150px;}
+
+.head-nav ul {
+    display: flex;
+    gap: 12px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* ---------------- 胶囊状发光按钮 ---------------- */
+.head-nav ul li a {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    padding: 0 16px;
+    font-size: 14px;
+    color: #a2d8ff;
+    font-weight: 500;
+    text-decoration: none;
+    background: linear-gradient(180deg, rgba(6, 40, 85, 0.8) 0%, rgba(2, 20, 50, 0.9) 100%);
+    border: 1px solid rgba(0, 180, 255, 0.5);
+    border-radius: 16px;
+    box-shadow: inset 0 0 10px rgba(0, 140, 255, 0.3), 0 2px 6px rgba(0,0,0,0.4);
+    transition: all 0.25s ease;
+    white-space: nowrap;
+}
+
+/* 按钮内部发光饰点 (· 按钮名称 ·) */
+.head-nav ul li a i {
+    display: inline-block;
+    width: 3px;
+    height: 3px;
+    background: #00d2ff;
+    border-radius: 50%;
+    margin: 0 6px;
+    opacity: 0.6;
+    box-shadow: 0 0 4px #00d2ff;
+}
+
+/* 按钮 Hover 与选中激活态 */
+.head-nav ul li.active a,
+.head-nav ul li a:hover {
+    color: #ffffff;
+    background: linear-gradient(180deg, rgba(0, 150, 255, 0.6) 0%, rgba(0, 80, 200, 0.8) 100%);
+    border-color: #00f2fe;
+    box-shadow: inset 0 0 12px rgba(0, 242, 254, 0.8), 0 0 12px rgba(0, 242, 254, 0.6);
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.9);
+}
+
+.head-nav ul li.active a i,
+.head-nav ul li a:hover i {
+    opacity: 1;
+    background: #ffffff;
+    box-shadow: 0 0 6px #ffffff;
+}
+
+/* ---------------- 中间主标题与副标题 ---------------- */
+.head-title {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    width: 34%;
+    margin-top: -10px;
+}
+
+.head-title h1 {
+    font-size: 24px !important;
+    font-weight: 800;
+    letter-spacing: 2px;
+    line-height: 30px;
+    margin: 0;
+    background: linear-gradient(180deg, #ffffff 20%, #a6f0ff 70%, #3ca9ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 8px rgba(0, 242, 254, 0.5));
+}
+
+.head-title .subtitle {
+    font-size: 9px;
+    color: #5ea8db;
+    letter-spacing: 1px;
+    margin-top: 1px;
+    font-family: Arial, sans-serif;
+    text-transform: uppercase;
+    opacity: 0.85;
+}
+
+/* ---------------- 右侧时间 ---------------- */
+.head .time {
+    margin-left: 15px;
+    font-size: 14px;
+    color: #00f2fe;
+    font-family: electronicFont, sans-serif;
+    white-space: nowrap;
+    text-shadow: 0 0 6px rgba(0, 242, 254, 0.6);
+}
+
+/* ---------------- 三角阵列呼吸动画 ---------------- */
+.tech-triangles {
+    animation: tri-pulse 2s infinite alternate ease-in-out;
+}
+
+@keyframes tri-pulse {
+    0% {
+        opacity: 0.6;
+        filter: drop-shadow(0 0 2px rgba(0, 242, 254, 0.4));
+    }
+    100% {
+        opacity: 1;
+        filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.9));
+    }
+}
+/* margin-top: 20px; */
+.mainbox{padding: 0px 10px; margin-bottom: 100px; flex:1; display:flex; flex-direction:column;}
+.nav1{display: flex; flex-wrap: nowrap; margin-left: -6px; margin-right:-6px; flex:1;}
+.nav1>li{padding:0 6px; float: none; display: flex; flex-direction: column; position: relative; z-index: 1; justify-content: space-evenly;}
+/* 中间列不创建层叠上下文 — 让内部 .map(position:fixed) 提升到根层，不被中间 li 锁住 */
+.nav1>li:nth-child(2){position:static; z-index:auto; justify-content: space-evenly;}
+/* 左列3D倾斜 — 对齐广东 left-wrap：perspective + rotateY 使卡片内边缘向地图中心倾斜 */
+.nav1>li:first-child{perspective:800px;perspective-origin:50% 50%;}
+.nav1>li:first-child .box{transform:rotateY(6deg);transform-origin:right center;will-change:transform;}
+/* 右列3D倾斜 — 对齐广东 right-wrap：perspective + rotateY 使卡片内边缘向地图中心倾斜 */
+.nav1>li:last-child{perspective:800px;perspective-origin:50% 50%;}
+.nav1>li:last-child .box{transform:rotateY(-6deg);transform-origin:left center;will-change:transform;}
+.nav1>li>.box:last-child{margin-bottom: 0;}
+
+/* ================= 2. 机甲切角边框卡片 (.box) ================= */
+.box {
+    position: relative;
+    background: rgba(10, 38, 68, 0.72) !important;
+    border: 1px solid rgba(0, 210, 255, 0.28) !important;
+    box-shadow: inset 0 0 15px rgba(0, 180, 255, 0.15) !important;
+}
+
+/* 简洁内发光 */
+.box::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 20px rgba(0, 180, 255, 0.10);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.boxnav {
+    position: relative;
+    padding: 10px;
+}
+/* ================= 3. 柔和科技风标题栏 (.tit) ================= */
+.tit {
+    position: relative;
+    height: 36px;
+    line-height: 36px;
+    padding-left: 22px !important;
+    font-size: 15px !important;
+    font-weight: 600;
+    color: #ffffff !important;
+    width: fit-content;
+    min-width: 50%;
+    max-width: 80%;
+    /* 简洁渐变，无斜纹 */
+    background: linear-gradient(90deg, rgba(0, 150, 220, 0.45) 0%, rgba(8, 35, 60, 0.6) 100%) !important;
+    border-bottom: 1px solid rgba(0, 242, 254, 0.4) !important;
+    text-shadow: 0 0 4px rgba(0, 242, 254, 0.4);
+}
+
+/* 标题左侧细发光条 */
+.tit::before {
+    content: "" !important;
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 2px;
+    height: 16px;
+    background: #00f2fe !important;
+    box-shadow: 0 0 6px rgba(0, 242, 254, 0.5) !important;
+    border-radius: 1px !important;
+    animation: none !important;
+}
+
+/* 标题下方的水平底线延伸 */
+.tit::after {
+    display: none !important;
+}
+/* 左列标题右对齐 — 与右边卡片左侧标题形成镜像对称 */
+.nav1>li:first-child .tit {
+    padding-left: 0 !important;
+    padding-right: 22px !important;
+    text-align: right;
+    margin-left: auto;
+    background: linear-gradient(270deg, rgba(0, 150, 220, 0.45) 0%, rgba(8, 35, 60, 0.6) 100%) !important;
+}
+.nav1>li:first-child .tit::before {
+    left: auto;
+    right: 0;
+    width: 2.5px ;
+}
+/* tit01 保留原有光点样式 */
+.tit01:before{position: absolute; content: ""; width: 6px; height: 6px; background: rgba(22,214,255,.9);box-shadow: 0 0 5px rgba(22,214,255,.9); border-radius: 10px; left: 10px; top: 18px;}
+
+.boxnav{padding: 10px;}
+.tit01{font-size: 16px; font-weight: 500; position: relative; padding-left: 15px;}
+.tit01:before{ left: 3px; top: 8px;}
+
+.mapc{background: none !important;}
+.map{position: fixed; left:0; top:0; width:100%; height:100%; z-index:0;}
+.map img{}
+.mapnav{position: absolute;z-index: 10;}
+
+
+.yqlist li{float: left; width: 33.33%; padding:10px 0; text-align: center;}
+.yq{width:100px; height: 100px; margin: 20px auto  5px auto;  position: relative; display: flex; justify-content: center;align-items: center; font-size: 30px;font-family:electronicFont;color: #fff32b;}
+.yqlist li span{color: #ffffff; font-size: 14px;}
+
+.yq:before{position: absolute; width: 100%; height: 100%; content: ""; background: url(../images/img1.png) center center; border-radius: 50%; background-size: 100% 100%; border: 2px solid rgba(7,229,255,.5); opacity:.6;
+	left:0; top: 0; animation: myfirst2 15s infinite linear;}
+
+.yq:after{position: absolute; width: 86%; background: url(../images/img2.png) center center; border-radius: 50%; background-size: 100% 100%; border: 2px solid rgba(7,229,255,.4); opacity:.5;
+	height: 86%; content: "";   left:7%; top: 7%; animation: myfirst 15s infinite linear;}
+
+
+@keyframes myfirst
+{
+to { transform: rotate(-360deg)}
+}
+@keyframes myfirst2
+{
+to { transform: rotate(360deg)}
+}
+
+
+
+
+/* 卡片圆圈颜色变体 — 使用对应颜色图片替代 hue-rotate 滤镜，确保正色 */
+.yq.yq-cyan:before, .yq.yq-cyan:after   { filter: none; }  /* 原色(默认青) */
+
+/* 红色预警 — 独立红色图片 + 红色边框 */
+.yq.yq-red:before {
+    background: url(../images/img1-red.png) center center !important;
+    background-size: 100% 100% !important;
+    border: 2px solid rgba(255,50,50,.6) !important;
+    box-shadow: 0 0 10px rgba(255,0,0,0.35);
+    filter: none !important;
+}
+.yq.yq-red:after {
+    background: url(../images/img2-red.png) center center !important;
+    background-size: 100% 100% !important;
+    border: 2px solid rgba(255,80,80,.5) !important;
+    box-shadow: 0 0 6px rgba(255,0,0,0.25);
+    filter: none !important;
+}
+
+/* 黄色预警 — 独立黄色图片 + 黄色边框 */
+.yq.yq-yellow:before {
+    background: url(../images/img1-yellow.png) center center !important;
+    background-size: 100% 100% !important;
+    border: 2px solid rgba(255,180,0,.6) !important;
+    box-shadow: 0 0 10px rgba(255,170,0,0.35);
+    filter: none !important;
+}
+.yq.yq-yellow:after {
+    background: url(../images/img2-yellow.png) center center !important;
+    background-size: 100% 100% !important;
+    border: 2px solid rgba(255,210,0,.5) !important;
+    box-shadow: 0 0 6px rgba(255,170,0,0.25);
+    filter: none !important;
+}
+
+/* 绿色 — 独立绿色图片 + 绿色边框 */
+.yq.yq-green:before {
+    background: url(../images/img1-green.png) center center !important;
+    background-size: 100% 100% !important;
+    border: 2px solid rgba(0,210,190,.6) !important;
+    box-shadow: 0 0 10px rgba(0,200,180,0.35);
+    filter: none !important;
+}
+.yq.yq-green:after {
+    background: url(../images/img2-green.png) center center !important;
+    background-size: 100% 100% !important;
+    border: 2px solid rgba(0,230,210,.5) !important;
+    box-shadow: 0 0 6px rgba(0,200,180,0.25);
+    filter: none !important;
+}
+.yq.yq-green { color: #00f2fe !important; }
+
+/* AI 实时抓取日志 — 跑马灯 */
+.marquee-wrap{ height: 100%; display: flex; flex-direction: column; }
+.marquee-header{ display: flex; align-items: center; padding: 0 12px 6px 12px; border-bottom: 1px solid rgba(7,229,255,.15); }
+.live-dot{ width: 8px; height: 8px; background: #00ff66; border-radius: 50%; margin-right: 8px;
+    box-shadow: 0 0 8px #00ff66; animation: blink 1.5s infinite; flex-shrink: 0; }
+@keyframes blink{ 0%,100%{ opacity: 1; } 50%{ opacity: 0.3; } }
+/* 标题呼吸灯缩放闪烁 */
+@keyframes pulse-glow {
+    0% { opacity: 0.4; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1.2); }
+}
+.marquee-tag{ color: #00deff; font-size: 12px; font-weight: bold; white-space: nowrap; }
+.marquee-content{ flex: 1; overflow: hidden; position: relative; margin-top: 4px; }
+.marquee-list{ list-style: none; padding: 0; margin: 0; transition: transform 0.5s ease; }
+.marquee-list li{ height: 32px; line-height: 32px; font-size: 12px; color: rgba(255,255,255,.85);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 12px; cursor: default; }
+.marquee-list li:hover{ background: rgba(7,229,255,.08); }
+.marquee-list .mq-time{ color: rgba(255,255,255,.45); margin-right: 8px; font-size: 11px; }
+.marquee-list .tag{ display: inline-block; padding: 1px 6px; border-radius: 2px; font-size: 10px;
+    margin-right: 6px; line-height: 1.5; vertical-align: middle; }
+.marquee-list .tag.red{ background: rgba(255,56,92,.25); color: #ff385c; border: 1px solid rgba(255,56,92,.4); }
+.marquee-list .tag.yellow{ background: rgba(254,240,0,.18); color: #fef000; border: 1px solid rgba(254,240,0,.35); }
+.marquee-list .tag.green{ background: rgba(0,255,102,.18); color: #00ff66; border: 1px solid rgba(0,255,102,.35); }
+.marquee-list .tag.blue{ background: rgba(0,222,255,.18); color: #00deff; border: 1px solid rgba(0,222,255,.35); }
+.marquee-list .mq-district{ color: #ff9f7f; margin-right: 4px; }
+
+/* ================= Three.js 3D 地图样式 ================= */
+#map canvas { display: block; }
+.map-label {
+	color: #fff; font-size: 12px; text-align: center;
+	text-shadow: 0 0 6px rgba(0,242,254,0.8);
+	white-space: nowrap; pointer-events: none;
+	font-family: "微软雅黑";
+}
+.map-bar-label {
+	color: #ffd700; font-size: 11px; text-align: center;
+	text-shadow: 0 0 4px rgba(255,215,0,0.6);
+	white-space: nowrap; pointer-events: none;
+	font-family: "微软雅黑";
+}
+
+/* 柱状图顶部标签 (对齐广东 bar label — 宽胶囊 + 大号数字 + 霓虹排名) */
+.bar-label-wrap {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0 18px;
+	width: 210px;
+	height: 53px;
+	border-radius: 30px 30px 30px 0px;
+	background: rgba(0, 0, 0, 0.4);
+	white-space: nowrap;
+	pointer-events: none;
+	font-family: "微软雅黑";
+	transform: translate(50%, 200%);
+	opacity: 0;
+}
+.bar-label-num {
+	display: flex;
+	align-items: baseline;
+	color: #fff;
+	font-weight: 700;
+	line-height: 1;
+}
+.bar-label-val {
+	font-size: 30px;
+	color: #fff;
+}
+.bar-label-unit {
+	font-size: 12px;
+	font-weight: 400;
+	color: rgba(255,255,255,0.5);
+	padding-left: 4px;
+}
+.bar-label-info {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	line-height: 1.25;
+}
+.bar-label-name {
+	font-size: 16px;
+	font-weight: 700;
+	color: #fff;
+}
+.bar-label-en {
+	font-size: 10px;
+	font-weight: 400;
+	color: rgba(255,255,255,0.5);
+	text-transform: uppercase;
+}
+.bar-label-rank {
+	font-size: 30px;
+	font-weight: 700;
+	color: #7efbf6;
+	text-shadow: 0 0 5px #7efbf6, 0 0 10px #7efbf6;
+	line-height: 1;
+}
+/* 排名靠后用金色 — 对齐广东 .yellow .no */
+.bar-label-wrap.gold .bar-label-rank {
+	color: #fef99e;
+	text-shadow: 0 0 5px #fef99e, 0 0 10px #fef99e;
+}
+
+/* 焦点标签（烟台市 / YANTAI CITY）— 对齐广东 */
+.focus-label-wrap {
+	text-align: center; pointer-events: none;
+}
+.focus-label-zh {
+	display: block; font-size: 92px; font-weight: 700; color: #fff;
+	text-shadow: 0 0 10px rgba(0,242,254,0.9), 0 2px 4px rgba(0,0,0,0.8);
+	letter-spacing: 6px;
+}
+.focus-label-en {
+	display: block; font-size: 40px; color: #a2d8ff;
+	text-shadow: 0 0 6px rgba(0,242,254,0.6);
+	letter-spacing: 3px; margin-top: 4px;
+}
+
+/* 确保卡片在地图 Canvas 上方（高 z-index 覆盖 fixed 定位的 #map） */
+.box { position: relative; z-index: 1000; }
+.nav1 > li { position: relative; z-index: 999; }
+
+/* ====== 底部托盘菜单 ====== bottom: 0;*/ 
+.bottom-tray {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;   
+  z-index: 100;
+  margin-left: -960px;
+  width: 1920px;
+  height: 90px;
+  box-sizing: border-box;
+  padding-top: 20px;
+  display: flex;
+  justify-content: center;
+  background: url(../images/bottom-menu-bg.png) no-repeat;
+  background-size: contain;
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+/* 流光线条 — 左右两侧定位 */
+.bottom-svg-line {
+  position: absolute;
+  width: 721px;
+  height: 57px;
+  bottom: -21px;
+}
+.bottom-svg-line-left {
+  right: 50%;
+  margin-right: -5px;
+}
+.bottom-svg-line-right {
+  transform: scaleX(-1);
+  left: 50%;
+  margin-left: -5px;
+}
+
+/* 箭头 */
+.bottom-tray-arrow {
+  display: flex;
+  align-items: center;
+  height: 30px;
+}
+.bottom-tray-arrow.is-reverse {
+  transform: scaleX(-1);
+}
+.bottom-tray-arrow img {
+  /* animation: arrowAnimate 2s ease-in-out infinite;  已停用：箭头不动 */
+}
+.bottom-tray-arrow img:last-child {
+  /* animation: arrowAnimate2 2s ease-in-out infinite;  已停用 */
+}
+
+/* 菜单按钮 */
+.bottom-menu {
+  display: flex;
+  padding: 0 20px;
+}
+.bottom-menu-item {
+  width: 100px;
+  height: 32px;
+  background: url(../images/bottom-menu-btn.png) no-repeat;
+  background-size: 100%;
+  font-size: 15px;
+  letter-spacing: 1.6px;
+  text-align: center;
+  line-height: 30px;
+  cursor: pointer;
+}
+.bottom-menu-item span {
+  display: block;
+  width: 100px;
+  height: 32px;
+  font-weight: 700;
+  background: -webkit-linear-gradient(rgba(117, 232, 255, 1), rgba(255, 255, 255, 1));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.bottom-menu-item:hover,
+.bottom-menu-item.is-active {
+  background: url(../images/bottom-menu-btn-hover.png) no-repeat;
+  background-size: 100%;
+}
+
+/* 箭头动画 */
+@keyframes arrowAnimate {
+  0%   { transform: translateX(0); }
+  50%  { transform: translateX(100%); }
+  100% { transform: translateX(0); }
+}
+@keyframes arrowAnimate2 {
+  0%   { transform: translateX(0); }
+  50%  { transform: translateX(-100%); }
+  100% { transform: translateX(0); }
+}

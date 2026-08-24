@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block title %}系统管理 - 烟台基站工程情报系统{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+
+    <h4 class="mb-3">⚙️ 系统管理</h4>
+
+    <div class="row g-3">
+        <!-- 用户管理 -->
+        <div class="col-lg-7">
+            <div class="table-card mb-3">
+                <div class="card-header">
+                    👥 用户管理
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                        <i class="bi bi-person-plus"></i> 添加用户
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>用户名</th>
+                                <th>显示名称</th>
+                                <th>邮箱</th>
+                                <th>角色</th>
+                                <th>状态</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in users %}
+                            <tr>
+                                <td><strong>{{ u.username }}</strong></td>
+                                <td>{{ u.display_name }}</td>
+                                <td>{{ u.email or '-' }}</td>
+                                <td>
+                                    <span class="badge {{ 'bg-warning text-dark' if u.role == 'admin' else 'bg-secondary' }}">
+                                        {{ '管理员' if u.role == 'admin' else '普通用户' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if u.is_active %}
+                                    <span class="badge bg-success">启用</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">禁用</span>
+                                    {% endif %}
+                                </td>
+                                <td style="font-size:12px; color:#888;">
+                                    {{ u.created_at.strftime('%Y-%m-%d') if u.created_at else '-' }}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        {% if u.id != current_user.id %}
+                                        <button class="btn btn-outline-warning"
+                                                onclick="toggleUser({{ u.id }})"
+                                                title="{{ '禁用' if u.is_active else '启用' }}">
+                                            <i class="bi {{ 'bi-pause-fill' if u.is_active else 'bi-play-fill' }}"></i>
+                                        </button>
+                                        <button class="btn btn-outline-info"
+                                                onclick="resetPassword({{ u.id }})"
+                                                title="重置密码">
+                                            <i class="bi bi-key"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 操作区 -->
+        <div class="col-lg-5">
+            <!-- 触发爬虫 -->
+            <div class="table-card mb-3">
+                <div class="card-header">🕷️ 手动触发爬虫</div>
+                <div class="p-3">
+                    <p style="font-size:13px; color:#666;">
+                        点击按钮立即执行一次完整的爬取流水线（爬取 → AI分析 → 邮件通知）。
+                        正常情况由 Windows 任务计划程序每周自动执行。
+                    </p>
+                    <form method="POST" action="{{ url_for('admin.trigger_spider') }}">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-play-fill"></i> 立即执行爬虫
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 最近爬取日志 -->
+            <div class="table-card">
+                <div class="card-header">📋 最近爬取日志</div>
+                <div class="table-responsive" style="max-height:400px; overflow-y:auto;">
+                    <table class="table table-sm" style="font-size:12px;">
+                        <thead>
+                            <tr>
+                                <th>爬虫</th>
+                                <th>时间</th>
+                                <th>结果</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if recent_logs %}
+                                {% for log in recent_logs %}
+                                <tr>
+                                    <td>{{ log.spider_name }}</td>
+                                    <td>{{ log.start_time.strftime('%m-%d %H:%M') if log.start_time else '-' }}</td>
+                                    <td>
+                                        {% if log.status == 'success' %}
+                                        <span style="color:#0f9d58;">✅ {{ log.items_new }}条</span>
+                                        {% elif log.status == 'failed' %}
+                                        <span style="color:#db4437;">❌ 失败</span>
+                                        {% else %}
+                                        <span style="color:#f4b400;">⏳ 运行中</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted py-3">
+                                        暂无爬取记录
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加用户 Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('admin.add_user') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-person-plus"></i> 添加用户</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">用户名</label>
+                        <input type="text" name="username" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">初始密码</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">显示名称</label>
+                        <input type="text" name="display_name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">邮箱</label>
+                        <input type="email" name="email" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">角色</label>
+                        <select name="role" class="form-select">
+                            <option value="user">普通用户</option>
+                            <option value="admin">管理员</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">创建用户</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function toggleUser(userId) {
+    if (!confirm('确定要切换该用户的启用/禁用状态吗？')) return;
+
+    fetch('/admin/users/' + userId + '/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.message);
+        }
+    });
+}
+
+function resetPassword(userId) {
+    var newPwd = prompt('请输入新密码（默认123456）：', '123456');
+    if (!newPwd) return;
+
+    fetch('/admin/users/' + userId + '/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: newPwd })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            alert('密码已重置为: ' + newPwd);
+        } else {
+            alert(data.message);
+        }
+    });
+}
+</script>
+{% endblock %}
