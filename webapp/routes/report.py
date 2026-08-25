@@ -13,6 +13,18 @@ from sqlalchemy import func
 
 from database.models import db, Project
 
+# status（如"施工阶段（施工许可证已核发）"）→ 5 类标准阶段，与 export_dashboard_db 同一实现
+try:
+    from scripts.export_dashboard_db import stage_of
+except Exception:
+    def stage_of(status):
+        s = status or ""
+        if any(k in s for k in ("竣工", "完工", "验收", "交付", "建成")): return "已竣工完工"
+        if any(k in s for k in ("招标", "中标", "磋商", "资格预审", "开标")): return "招标阶段"
+        if any(k in s for k in ("施工", "开工", "在建", "封顶", "主体")): return "施工阶段"
+        if any(k in s for k in ("规划", "立项", "预审", "选址", "公示", "许可", "审批", "评估")): return "规划阶段"
+        return "待核实"
+
 report_bp = Blueprint("report", __name__)
 
 # report.html 文件路径（abspath 归一化，否则 send_from_directory 前缀检查失败返回 404）
@@ -73,7 +85,8 @@ def report_data():
             "name": p.project_name or "",
             "district": p.district or "",
             "type": p.project_type or "未分类",
-            "stage": p.status or "新发现",
+            "stage": stage_of(p.status),          # 5 类标准阶段（卡片徽章：施工阶段，不带括号长文本）
+            "stage_detail": p.status or "",       # AI 完整阶段描述（详情弹窗用）
             "priority": p.priority or 3,
             "score": p.score or 0,
             "warning": p.warning_level or warning_label(p.need_base_station, p.priority),

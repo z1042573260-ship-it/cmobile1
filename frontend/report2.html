@@ -1852,23 +1852,26 @@ function exportExcel() {
     if (typeof ExcelJS === 'undefined') { alert('Excel 组件加载失败，请检查网络后重试'); return; }
     if (!filteredProjects || !filteredProjects.length) { showToast('当前筛选条件下无数据'); return; }
 
+    // 导出 = 当前筛选条件（filteredProjects：区县/预警/月份/阶段/类型/搜索 全叠加）
+    // 键必须与 ws.columns 的 key 一致（exceljs addRow 按 column.key 匹配，
+    // 中文键会导致所有列空白——已修复）
     var rows = filteredProjects.map(function(p) {
         var needs = p.telecom_needs;
         if (typeof needs === 'string') { try { needs = JSON.parse(needs); } catch (e) { needs = null; } }
         if (Array.isArray(needs)) needs = needs.join('、');
         return {
-            '项目名称': p.name || '',
-            '区县': p.district || '',
-            '项目类型': p.type || '',
-            '阶段': p.stage_detail || p.stage || '',
-            '预警级别': p.warning || '',
-            '发布日期': p.date || p.publish_date || '',
-            '地点': p.location || '',
-            '投资额': p.investment || '',
-            '规模': p.scale || '',
-            '通信需求': needs || '',
-            'AI摘要': p.ai_summary || '',
-            '原文链接': p.url || '',
+            'name': p.name || '',
+            'district': p.district || '',
+            'type': p.type || '',
+            'stage': p.stage_detail || p.stage || '',
+            'warning': p.warning || '',
+            'date': p.date || p.publish_date || '',
+            'location': p.location || '',
+            'investment': p.investment || '',
+            'scale': p.scale || '',
+            'needs': needs || '',
+            'ai_summary': p.ai_summary || '',
+            'url': p.url || '',
         };
     });
 
@@ -1890,8 +1893,9 @@ function exportExcel() {
     ws.autoFilter = { from: 'A1', to: 'L' + (rows.length + 1) };
     ws.getRow(1).font = { bold: true };
 
-    // Sheet2：区县 × 类型 透视（含合计）
-    var t1 = buildCrossTable(rows, '区县', '项目类型');
+    // Sheet2：区县 × 类型 透视（含合计）——rows 键为英文，表头手动还原中文
+    var t1 = buildCrossTable(rows, 'district', 'type');
+    t1.header[0] = '区县';
     var ws2 = wb.addWorksheet('区县×类型透视');
     ws2.addRow(t1.header);
     t1.data.forEach(function(r) { ws2.addRow(r); });
@@ -1899,25 +1903,13 @@ function exportExcel() {
     ws2.getRow(1).font = { bold: true };
 
     // Sheet3：区县 × 预警级别 透视（含合计）
-    var t2 = buildCrossTable(rows, '区县', '预警级别');
+    var t2 = buildCrossTable(rows, 'district', 'warning');
+    t2.header[0] = '区县';
     var ws3 = wb.addWorksheet('区县×预警透视');
     ws3.addRow(t2.header);
     t2.data.forEach(function(r) { ws3.addRow(r); });
     ws3.autoFilter = { from: 'A1', to: ws3.getColumn(t2.header.length).letter + (t2.data.length + 1) };
     ws3.getRow(1).font = { bold: true };
-
-    // Sheet4：区县数据柱状图（echarts 当前图表 PNG 图片）
-    var ws4 = wb.addWorksheet('区县柱状图');
-    if (typeof chartBar !== 'undefined' && chartBar && typeof chartBar.getDataURL === 'function') {
-        try {
-            var png = chartBar.getDataURL({ pixelRatio: 2, backgroundColor: '#fff' });
-            var imgId = wb.addImage({ base64: png.split(',')[1], extension: 'png' });
-            ws4.addImage(imgId, { tl: { col: 0, row: 0 }, ext: { width: 720, height: 400 } });
-        } catch (e) {
-            console.warn('柱状图导出失败:', e);
-        }
-    }
-    ws4.getCell('A22').value = '注：柱状图为当前筛选条件下的区县项目数';
 
     var now = new Date();
     var stamp = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
@@ -1928,7 +1920,7 @@ function exportExcel() {
         a.download = '项目明细_' + stamp + '.xlsx';
         a.click();
         setTimeout(function() { URL.revokeObjectURL(a.href); }, 3000);
-        showToast('已导出 ' + rows.length + ' 条（含透视表+柱状图）');
+        showToast('已导出当前筛选 ' + rows.length + ' 条');
     });
 }
 
