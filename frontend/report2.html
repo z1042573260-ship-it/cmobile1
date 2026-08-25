@@ -1728,7 +1728,7 @@ function updateProjectList() {
                 '<div class="project-meta">' +
                     warnBadge +
                     '<span class="badge type"><i class="ri-price-tag-3-line"></i> ' + escapeHtml(p.type || '--') + '</span>' +
-                    (p.stage ? '<span class="badge stage"><i class="ri-flashlight-line"></i> ' + escapeHtml(p.stage) + '</span>' : '') +
+                    (p.stage ? '<span class="badge stage"><i class="ri-flashlight-line"></i> ' + escapeHtml(stageShort(p.stage)) + '</span>' : '') +
                 '</div>' +
                 '<span class="district-tag">' + escapeHtml(p.district || '') + '</span>' +
             '</div>' +
@@ -1739,6 +1739,15 @@ function updateProjectList() {
 function escapeHtml(str) {
     if (!str) return '';
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// 阶段完整描述 → 标准阶段（去括号："施工阶段（施工许可证已核发）" → "施工阶段"）
+// 前端兜底：不管数据源 stage 是否带括号，卡片/导出统一短值
+function stageShort(s) {
+    if (!s) return '';
+    var base = String(s).split('（')[0].trim();
+    if (base === '规划立项' || base === '规划变更') return '规划阶段';
+    return base;
 }
 
 // ====== Process Mode (项目处理标记) ======
@@ -1863,7 +1872,7 @@ function exportExcel() {
             'name': p.name || '',
             'district': p.district || '',
             'type': p.type || '',
-            'stage': p.stage_detail || p.stage || '',
+            'stage': stageShort(p.stage_detail || p.stage) || '',   // 标准阶段（去括号）
             'warning': p.warning || '',
             'date': p.date || p.publish_date || '',
             'location': p.location || '',
@@ -1980,7 +1989,7 @@ function updateProcessedPanel() {
                 '<div class="project-meta">' +
                     warnBadge +
                     '<span class="badge type"><i class="ri-price-tag-3-line"></i> ' + escapeHtml(p.type || '--') + '</span>' +
-                    (p.stage ? '<span class="badge stage"><i class="ri-flashlight-line"></i> ' + escapeHtml(p.stage) + '</span>' : '') +
+                    (p.stage ? '<span class="badge stage"><i class="ri-flashlight-line"></i> ' + escapeHtml(stageShort(p.stage)) + '</span>' : '') +
                 '</div>' +
                 '<span class="district-tag">' + escapeHtml(p.district || '') + '</span>' +
                 timeHtml +
