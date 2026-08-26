@@ -2,6 +2,8 @@
 <html>
 <head>
 <meta charset="utf-8">
+<!-- 手机浏览器按真实设备宽度渲染（否则 980px 虚拟视口导致缩放错位）PC 无影响 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>工程建设信息自动化预警平台</title>
 <script type="text/javascript" src="js/jquery.js"></script>
 <link rel="stylesheet" href="css/style.css">
@@ -432,13 +434,22 @@ var t = null;
 	el.style.overflow = 'hidden';
 
 	function keepFit() {
-		// 拉伸填满：X/Y 独立缩放，完整填充视口，无黑边
 		var scaleX = window.innerWidth / dw;
 		var scaleY = window.innerHeight / dh;
-		el.style.transform = 'scale(' + scaleX + ', ' + scaleY + ')';
+		var isPhone = window.innerWidth < 900;   // 手机/小平板
+		if (isPhone) {
+			// 手机（横屏展览为主）：等比缩放 + 居中 —— 比例保真、面板位置与 PC 完全一致
+			var scale = Math.min(scaleX, scaleY);
+			el.style.transform = 'scale(' + scale + ')';
+			el.style.left = Math.round((window.innerWidth - dw * scale) / 2) + 'px';
+			el.style.top = Math.round((window.innerHeight - dh * scale) / 2) + 'px';
+		} else {
+			// PC：保持原逻辑（拉伸填满，无黑边）—— 不动
+			el.style.transform = 'scale(' + scaleX + ', ' + scaleY + ')';
+			el.style.left = '0px';
+			el.style.top = '0px';
+		}
 		el.style.transformOrigin = '0 0';
-		el.style.left = '0px';
-		el.style.top = '0px';
 	}
 
 	keepFit();
