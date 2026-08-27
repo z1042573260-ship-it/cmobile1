@@ -812,6 +812,7 @@
           var dir = parseInt(btn.getAttribute('data-dir'), 10);
           var ni = (curIdx + dir + memList.length) % memList.length;
           showCenterDetail(memList[ni], memList, ni);
+          renderDetailPanels(memList[ni]);   // 右栏同类项目对比同步刷新（跟随当前项目）
         };
       });
     }
@@ -1004,6 +1005,7 @@
     if (!panel) return;
     var m = matchDetail(p);
     centerState.cardDetail = p;
+    renderDetailPanels(p);   // 右栏同类项目对比同步跟随当前选中项目
     panel.classList.remove('detail');
     panel.classList.add('allinfo');
     panel.style.display = 'flex';
