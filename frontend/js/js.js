@@ -169,7 +169,7 @@ function initEchart2() {
             bottom: 0, itemWidth: 10, itemHeight: 10, textStyle: { color: 'rgba(255,255,255,.6)', fontSize: 10 },
             data: ['红色预警', '黄色预警']
         },
-        grid: { left: '0', top: '22', right: '0', bottom: names.length > 8 ? 80 : 24, containLabel: true },
+        grid: { left: '0', top: '22', right: '0', bottom: names.length > 8 ? 52 : 24, containLabel: true },
         xAxis: {
             type: 'category', data: names,
             axisLine: { lineStyle: { color: 'rgba(255,255,255,.3)' } },
