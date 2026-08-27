@@ -3,6 +3,10 @@ $(window).load(function() { $(".loading").fadeOut(); });
 
 var chartInstances = {};
 
+// ===== 区县预警排名图（echart2）横坐标可手动调整参数（改数字保存刷新即生效）=====
+var E2_AXIS_ROTATE = 30;     // 标签旋转角度（0=横排不斜；30=向右斜 30°。本周/本月/今年统一）
+var E2_GRID_BOTTOM = 46;     // 横坐标底部留白 px（角度越大留白越多，46 适合 30°）
+
 // 区县预警数据周期状态（本周/本月/今年）
 var _mqPeriod = 'week';
 // 暴露当前周期（three-map 返回全市/模式切换时取导航栏周期，防止用错 _pinPeriod 显示全量数据）
@@ -169,13 +173,13 @@ function initEchart2() {
             bottom: 0, itemWidth: 10, itemHeight: 10, textStyle: { color: 'rgba(255,255,255,.6)', fontSize: 10 },
             data: ['红色预警', '黄色预警']
         },
-        grid: { left: '0', top: '22', right: '0', bottom: names.length > 8 ? 52 : 24, containLabel: true },
+        grid: { left: '0', top: '22', right: '0', bottom: E2_GRID_BOTTOM, containLabel: true },
         xAxis: {
             type: 'category', data: names,
             axisLine: { lineStyle: { color: 'rgba(255,255,255,.3)' } },
             axisTick: { show: false },
             axisLabel: { interval: 0, fontSize: 12, color: '#fff',
-                rotate: names.length > 8 ? 40 : 0,   // 区县多（今年/全量）时旋转 40°，避免横坐标重叠
+                rotate: E2_AXIS_ROTATE,   // 三周期统一旋转角度（可手动调整，见顶部 E2_AXIS_ROTATE）
                 formatter: function(v) {
                     return v.replace('开发区(黄渤海新区)', '黄渤海').replace(/区$/, '').replace(/市$/, '');
                 } }
