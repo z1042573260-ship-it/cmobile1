@@ -28,6 +28,7 @@
 		POLL_TRIES: 20,             // 地图就绪轮询次数
 		POLL_INTERVAL: 500,         // 轮询间隔 ms（共 10 秒）
 		MAX_REFS: 5,                // 单条回复最多项目标记数
+		CONTEXT_PROJECTS: 15,       // 会话上下文项目池上限（当前命中优先 + 历史累积）
 	};
 
 	// ===== 安全开关 =====
@@ -60,6 +61,7 @@
 
 	// ===== 状态 =====
 	var history = [];              // [{role, content}] 最近 N 轮
+	var contextProjects = [];      // 会话上下文项目池（追问时 AI 仍可引用）
 	var listening = false;
 	var recog = null;
 
@@ -70,10 +72,38 @@
 
 	// ===== 检索：本地全字段匹配 + 评分 =====
 	// 返回 { mode:'hits'|'summary', hits:[], summary:{} }
+	// 中文长句先拆出关键词（区县/红黄/阶段/残留词），再全字段匹配
+	// （"芝罘区什么项目" → 拆出"芝罘区"；"龙口市红色预警" → "龙口市"+"红"+"预警"）
+	var STOPWORDS = [
+		'什么', '哪些', '哪个', '有没有', '有吗', '有哪些', '一个', '一些', '一点',
+		'吗', '呢', '了', '的', '项目', '工程', '情况', '信息', '名单', '介绍', '内容',
+		'看看', '帮我', '请问', '知道', '下', '中', '和', '与', '给', '有', '是', '超',
+		'投资', '建设', '还有', '现在', '最近', '关注', '查询', '查查', '查一下',
+	];
+	var STAGE_WORDS = ['规划', '招标', '施工', '竣工', '完工', '验收', '待核实', '设计', '监理', '采购', '中标'];
+	function splitKeywords(token, districtNames) {
+		var out = [], rest = token;
+		// ① 区县名（长词优先）
+		var names = districtNames.slice().sort(function (a, b) { return b.length - a.length; });
+		names.forEach(function (d) {
+			if (rest.indexOf(d) !== -1) { out.push(d); rest = rest.split(d).join(''); }
+		});
+		// ② 红黄预警
+		if (rest.indexOf('红') !== -1) { out.push('红'); }
+		if (rest.indexOf('黄') !== -1) { out.push('黄'); }
+		// ③ 阶段词
+		STAGE_WORDS.forEach(function (w) {
+			if (rest.indexOf(w) !== -1) { out.push(w); rest = rest.split(w).join(''); }
+		});
+		// ④ 残留（去停用词后长度≥2 保留，如"产业园""综合体"）
+		STOPWORDS.forEach(function (w) { rest = rest.split(w).join(''); });
+		rest = rest.replace(/[的了吗呢]/g, '');
+		if (rest.length >= 2) out.push(rest);
+		return out;
+	}
 	function searchProjects(query) {
 		var pts = getPoints();
 		var q = (query || '').trim();
-		var tokens = q.toLowerCase().split(/[\s,，、]+/).filter(Boolean);
 
 		var districtNames = [];
 		if (window.DISTRICT_CENTERS) {
@@ -90,6 +120,19 @@
 			if (q.indexOf(d) !== -1) wantDistrict = d;
 		});
 
+		// 关键词拆分：长句 → 关键词列表（每个都要命中）
+		var keywords = [];
+		q.split(/[\s,，、]+/).forEach(function (t) {
+			if (!t) return;
+			splitKeywords(t, districtNames).forEach(function (k) {
+				if (keywords.indexOf(k) === -1) keywords.push(k);
+			});
+		});
+		// 残留兜底：如果没拆出任何关键词（纯语气句），按区县/红黄匹配
+		if (keywords.length === 0 && (wantDistrict || wantRed || wantYellow)) {
+			// 仅靠快捷词过滤
+		}
+
 		var hits = [];
 		pts.forEach(function (p) {
 			var S = [
@@ -97,8 +140,8 @@
 				p.location, p.developer, p.scale, p.investment, p.source_name, p.ai_summary,
 			].join('|').toLowerCase();
 			var ok = true;
-			for (var i = 0; i < tokens.length; i++) {
-				if (tokens[i] && S.indexOf(tokens[i]) === -1) { ok = false; break; }
+			for (var i = 0; i < keywords.length; i++) {
+				if (keywords[i] && S.indexOf(keywords[i]) === -1) { ok = false; break; }
 			}
 			if (!ok) return;
 			// 快捷词校验（用户明确要红/黄时，不匹配则排除）
@@ -111,11 +154,11 @@
 			// 评分排序
 			var score = 0;
 			var nm = String(p.name || '').toLowerCase();
-			tokens.forEach(function (t) {
+			keywords.forEach(function (t) {
 				if (t && nm.indexOf(t) !== -1) score += 100;
 			});
 			if (wantDistrict && p.district === wantDistrict) score += 50;
-			tokens.forEach(function (t) {
+			keywords.forEach(function (t) {
 				if (!t) return;
 				if (t && String(p.project_type || '').toLowerCase().indexOf(t) !== -1) score += 30;
 				if (t && (String(p.warning || '').indexOf('红') !== -1 && /红/.test(t))) score += 20;
@@ -145,34 +188,36 @@
 	}
 
 	// ===== 上下文块（拼进 system prompt）=====
-	function buildContextBlock(res) {
-		if (res.mode === 'hits') {
-			var lines = res.hits.map(function (p, i) {
-				var parts = [
-					'[' + (p.name || '未命名') + ']',
-					p.district || '未知区县',
-					String(p.warning || '').indexOf('红') !== -1 ? '红' : '黄',
-					stageShort(p.stage) || '待核实',
-					p.project_type || '未知类型',
-					p.investment || '待核实',
-					p.scale || '待核实',
-					p.developer || '未知',
-					'P' + (p.priority || 3),
-					String(p.ai_summary || '').slice(0, 80),
-				];
-				return (i + 1) + '. ' + parts.join(' | ');
-			});
-			return '【项目上下文】与问题相关的 ' + res.hits.length + ' 个项目，回答只能引用这些数据；引用项目时必须用 [项目全名]（与 name 一字不差）包裹。\n' + lines.join('\n');
-		}
-		return '【数据库概览】共 ' + res.summary.total + ' 个预警项目：红色 ' + res.summary.red + '、黄色 ' + res.summary.yellow + '。区县分布 TOP：' + res.summary.distTop + '。未找到与"' + res.summary.query + '"匹配的项目，请如实告知用户，并给出以上概览。';
+	function buildContextBlock(projects) {
+		var lines = projects.map(function (p, i) {
+			var parts = [
+				'[' + (p.name || '未命名') + ']',
+				p.district || '未知区县',
+				String(p.warning || '').indexOf('红') !== -1 ? '红' : '黄',
+				stageShort(p.stage) || '待核实',
+				p.project_type || '未知类型',
+				'发布:' + (p.date || p.publish_date || '待核实'),
+				p.investment || '待核实',
+				p.scale || '待核实',
+				p.developer || '未知',
+				'P' + (p.priority || 3),
+				String(p.ai_summary || '').slice(0, 80),
+			];
+			return (i + 1) + '. ' + parts.join(' | ');
+		});
+		return '【项目上下文】当前会话已检索到的 ' + projects.length + ' 个项目（含发布日期等字段），回答只能引用这些数据；引用项目时必须用 [项目全名]（与 name 一字不差）包裹。用户追问（如"这都是什么时间""投资多少""哪个最大""地点在哪"）时，直接从这些项目中找答案，不要回答"查无信息"。\n' + lines.join('\n');
+	}
+
+	function buildSummaryBlock(sum) {
+		return '【数据库概览】共 ' + sum.total + ' 个预警项目：红色 ' + sum.red + '、黄色 ' + sum.yellow + '。区县分布 TOP：' + sum.distTop + '。未找到与"' + sum.query + '"匹配的项目，请如实告知用户，并给出以上概览。';
 	}
 
 	var SYSTEM_PROMPT = [
 		'你是烟台工程建设信息预警平台（基站工程情报系统）的数据库查询助手。',
 		'回答规则：',
 		'1. 只依据【项目上下文】或【数据库概览】中的数据回答，绝不编造上下文之外的项目、数字或信息。',
-		'2. 上下文无相关内容时，明确说"数据库中没有查到此信息"，并给出数据库概览。',
-		'3. 简体中文，要点式回答，优先给结论（预警等级、区县、投资规模、建设单位、AI摘要）。不用 markdown 表格。',
+		'2. 【项目上下文】中有项目时，用户的追问（时间/投资/地点/比较/筛选）应直接从这些项目数据中回答，不要回答"查无信息"；只有上下文确实没有任何相关内容时，才说明"数据库中没有查到此信息"。',
+		'3. 简体中文，要点式回答，优先给结论（预警等级、区县、投资规模、发布日期、建设单位、AI摘要）。不用 markdown 表格。',
 		'4. 提到项目时，必须用 [项目全名]（与上下文中的 name 一字不差）包裹，一条回复最多 ' + AI_CONFIG.MAX_REFS + ' 个标记。',
 		'5. 被问及数据库之外的问题（天气、时事、闲聊无关内容）时，礼貌说明你只负责项目情报查询。',
 	].join('\n');
@@ -293,9 +338,20 @@
 		input.value = '';
 		addMsg('user', text);
 
-		// 检索当前问题 → 上下文块（每次重建，数据保持最新）
+		// 检索当前问题 + 合并会话上下文项目池（追问"这都是什么时间"时，
+		// 上轮检索到的项目仍在上下文中 → AI 能直接回答，不依赖穷举关键词）
 		var res = searchProjects(text);
-		var system = SYSTEM_PROMPT + '\n\n' + buildContextBlock(res);
+		var merged = (res.mode === 'hits' ? res.hits : []).slice();
+		contextProjects.forEach(function (p) {
+			if (merged.length >= AI_CONFIG.CONTEXT_PROJECTS) return;
+			var dup = merged.some(function (m) { return (m.name || '') === (p.name || ''); });
+			if (!dup) merged.push(p);
+		});
+		contextProjects = merged;
+		var contextBlock = merged.length
+			? buildContextBlock(merged)
+			: buildSummaryBlock(res.summary);
+		var system = SYSTEM_PROMPT + '\n\n' + contextBlock;
 
 		var msgs = [{ role: 'system', content: system }];
 		history.slice(-AI_CONFIG.HISTORY_ROUNDS * 2).forEach(function (m) {
