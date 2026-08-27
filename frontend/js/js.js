@@ -39,6 +39,7 @@ function filterByPeriod(pl, period) {
 // 柱状图（buildDistrictRanking）保持开发区独立显示，不经过此映射
 function statDistrict(d) {
     if (d === '开发区' || d === '烟台开发区') return '福山区';
+    if (d === '长岛综合试验区' || d === '长岛县' || d === '长岛综试区') return '蓬莱区';
     return d;
 }
 
@@ -48,7 +49,8 @@ function buildDistrictRanking(period) {
     var m = {};
     pl.forEach(function (p) {
         if (!p || !p.district) return;
-        m[p.district] = (m[p.district] || 0) + 1;
+        var k = statDistrict(p.district);   // 统计口径：长岛→蓬莱区、开发区→福山区（与 echart2 一致）
+        m[k] = (m[k] || 0) + 1;
     });
     return Object.keys(m).map(function (k) { return { name: k, value: m[k] }; })
         .sort(function (a, b) { return b.value - a.value; });

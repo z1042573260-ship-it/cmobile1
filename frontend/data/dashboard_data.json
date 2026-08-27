@@ -1,6 +1,6 @@
 {
  "meta": {
-  "updated_at": "2026-08-27 14:30:38",
+  "updated_at": "2026-08-27 14:54:36",
   "total_projects": 336,
   "source": "MySQL 数据库导出（export_dashboard_db.py）"
  },
@@ -127,6 +127,10 @@
    "value": 20
   },
   {
+   "name": "福山区",
+   "value": 18
+  },
+  {
    "name": "芝罘区",
    "value": 17
   },
@@ -139,20 +143,12 @@
    "value": 13
   },
   {
-   "name": "福山区",
-   "value": 13
-  },
-  {
    "name": "牟平区",
    "value": 8
   },
   {
    "name": "蓬莱区",
-   "value": 5
-  },
-  {
-   "name": "烟台开发区",
-   "value": 4
+   "value": 7
   },
   {
    "name": "招远市",
@@ -161,14 +157,6 @@
   {
    "name": "烟台高新区",
    "value": 3
-  },
-  {
-   "name": "长岛综合试验区",
-   "value": 2
-  },
-  {
-   "name": "开发区",
-   "value": 1
   }
  ],
  "timeline": [

@@ -113,12 +113,16 @@ def build_dashboard(rows: list[dict]) -> dict:
     valuable = sum(1 for r in rows if r.get("is_valuable"))
     districts = {r["district"] for r in rows if r.get("district") and r["district"] != "待核实"}
 
-    # ---- 区县排名 ----
+    # ---- 区县排名（统计口径：开发区→福山区、长岛→蓬莱区，与前端 statDistrict 一致）----
     dcount = {}
     for r in rows:
         d = r.get("district") or "未知"
         if d == "待核实":
             d = "未知"
+        if d in ("开发区", "烟台开发区"):
+            d = "福山区"
+        elif d in ("长岛综合试验区", "长岛县", "长岛综试区"):
+            d = "蓬莱区"
         dcount[d] = dcount.get(d, 0) + 1
     district_ranking = sorted(
         [{"name": k, "value": v} for k, v in dcount.items()],
