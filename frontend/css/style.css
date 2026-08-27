@@ -1315,3 +1315,15 @@ to { transform: rotate(360deg)}
 	user-select: none;
 }
 #center-list .cd-jump:hover { background: rgba(0,180,220,.3); color: #fff; }
+
+/* ===== 手机端（<900px）：2D 模式左右栏面板高度固定 =====
+   detail-panel 原高度 calc(100vh-180px) 在手机上 100vh≈屏幕高(如390px)，
+   等比缩放后面板变成小条 → 3D↔2D 切换时左右栏高度骤变。
+   手机端改为 1920×1080 坐标系固定高度，与 3D 面板一致，切换不跳动。
+   PC 不受影响（不在 media 内）。 */
+@media (max-width: 900px) {
+    .mainbox.detail-mode .nav1 > li:first-child > .detail-panel,
+    .mainbox.detail-mode .nav1 > li:last-child > .detail-panel {
+        height: 820px;
+    }
+}
