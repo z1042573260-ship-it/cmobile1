@@ -169,12 +169,13 @@ function initEchart2() {
             bottom: 0, itemWidth: 10, itemHeight: 10, textStyle: { color: 'rgba(255,255,255,.6)', fontSize: 10 },
             data: ['红色预警', '黄色预警']
         },
-        grid: { left: '0', top: '22', right: '0', bottom: '24', containLabel: true },
+        grid: { left: '0', top: '22', right: '0', bottom: names.length > 8 ? 80 : 24, containLabel: true },
         xAxis: {
             type: 'category', data: names,
             axisLine: { lineStyle: { color: 'rgba(255,255,255,.3)' } },
             axisTick: { show: false },
             axisLabel: { interval: 0, fontSize: 12, color: '#fff',
+                rotate: names.length > 8 ? 40 : 0,   // 区县多（今年/全量）时旋转 40°，避免横坐标重叠
                 formatter: function(v) {
                     return v.replace('开发区(黄渤海新区)', '黄渤海').replace(/区$/, '').replace(/市$/, '');
                 } }
