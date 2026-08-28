@@ -1518,11 +1518,11 @@ class YantaiMap3D {
      this._pinPeriod = period || null;
      if (!this._warningPinGroup) return;
      if (this._districtMode) {
-       // 下钻态：图钉由 _repositionPinsForDrill 控制位置，按当前周期+颜色刷新可见性
-       this._warningPins.forEach(pg => {
-         pg.visible = pg.visible && this._pinFilterMatches(pg.userData) && this._pinPeriodMatches(pg.userData);
-       });
+       // 下钻态：完整重算区县内图钉（周期扩张/收缩都正确，而非单调 AND 只能收缩）
+       // _repositionPinsForDrill 内部含周期过滤 + 代表选择 + 可见性重算，不碰相机/柱状图
+       this._repositionPinsForDrill(this._drillCenter, this._currentScaleXY || 1);
        return;
+     }
      }
      this._foldDuplicatePins();   // 内部已叠加 颜色+周期 过滤
      const visCount = this._warningPins.filter(pg => pg.visible).length;

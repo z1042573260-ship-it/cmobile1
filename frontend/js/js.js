@@ -748,9 +748,10 @@ function initAllCharts() {
                     window.yantaiMapChart.setPinPeriod(_mqPeriod);
                 }
             } catch(e) { console.error('pinPeriod:', e); }
-            // 3D 柱状图：柱高/柱顶项目数随周期变化
+            // 3D 柱状图：柱高/柱顶项目数随周期变化（下钻态跳过——保持区县下钻，图钉由 setPinPeriod 刷新）
             try {
-                if (window.yantaiMapChart && window.yantaiMapChart.replaceBars) {
+                if (window.yantaiMapChart && window.yantaiMapChart.replaceBars
+                    && !window.yantaiMapChart._districtMode) {
                     window.yantaiMapChart.updateBars(buildDistrictRanking(_mqPeriod));
                 }
             } catch(e) { console.error('bars period:', e); }
