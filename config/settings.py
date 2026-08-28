@@ -58,7 +58,10 @@ EMAIL_SMTP_SERVER = "smtp.qq.com"
 EMAIL_SMTP_PORT = 465  # SSL
 EMAIL_SENDER = os.getenv("EMAIL_SENDER", "1042573260@qq.com")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")  # QQ邮箱授权码，走 .env（敏感）
-EMAIL_RECIPIENTS = os.getenv("EMAIL_RECIPIENTS", "1042573260@qq.com").split(",")  # 逗号分隔的收件人列表
+EMAIL_RECIPIENTS = os.getenv(
+    "EMAIL_RECIPIENTS",
+    "1042573260@qq.com,wuqingyuan@sd.chinamobile.com",
+).split(",")  # 逗号分隔的收件人列表
 
 # ===== 爬虫配置 =====
 # 烟台各区县列表
