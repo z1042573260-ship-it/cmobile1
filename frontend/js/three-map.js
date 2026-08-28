@@ -1523,7 +1523,6 @@ class YantaiMap3D {
        this._repositionPinsForDrill(this._drillCenter, this._currentScaleXY || 1);
        return;
      }
-     }
      this._foldDuplicatePins();   // 内部已叠加 颜色+周期 过滤
      const visCount = this._warningPins.filter(pg => pg.visible).length;
      console.log('[setPinPeriod]', period, '→ 图钉可见', visCount, '/', this._warningPins.length);
