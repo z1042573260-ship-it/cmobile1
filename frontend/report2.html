@@ -1382,24 +1382,38 @@ function applyFilters() {
     var type = document.getElementById('filterType').value;
     var skw = searchKeyword ? searchKeyword.toLowerCase() : '';
     var tkw = tagKeyword ? tagKeyword.toLowerCase() : '';
+    // 搜索词多词拆分（"万华 海阳" → ['万华','海阳']，全部命中才保留）
+    var skwTokens = skw ? skw.split(/[\s,，、]+/).filter(Boolean) : [];
+    var tkwTokens = tkw ? tkw.split(/[\s,，、]+/).filter(Boolean) : [];
 
     filteredProjects = (allData.project_list || []).filter(function(p) {
         // 叠加筛选：区县 + 预警 + 月份/本周 + 阶段 + 类型（AND 关系）
         if (district && p.district !== district) return false;
         if (warning && p.warning !== warning) return false;
         // 时间筛选：本周(__week__) / 具体月份 / 全部月份(空)
-        if (month === '__week__' && !isThisWeek(p)) return false;
-        if (month && month !== '__week__' && (!p.date || p.date.indexOf(month) !== 0)) return false;
-        if (filterDate && (!p.date || p.date !== filterDate)) return false;
+        // 搜索框有词时跳过时间筛选 → 全库搜索（如"万华"在本周外也能搜到）
+        if (skwTokens.length === 0) {
+            if (month === '__week__' && !isThisWeek(p)) return false;
+            if (month && month !== '__week__' && (!p.date || p.date.indexOf(month) !== 0)) return false;
+            if (filterDate && (!p.date || p.date !== filterDate)) return false;
+        }
         // 阶段筛选
         if (stage && p.stage !== stage) return false;
         // 类型筛选
         if (type && p.type !== type) return false;
         // 搜索框（基础层）和标签（叠加层）各自独立过滤
-        if (skw || tkw) {
-            var haystack = (p.name + '|' + (p.district || '') + '|' + (p.type || '') + '|' + (p.stage || '') + '|' + (p.ai_summary || '')).toLowerCase();
-            if (skw && haystack.indexOf(skw) === -1) return false;
-            if (tkw && haystack.indexOf(tkw) === -1) return false;
+        // 搜索范围：名称/区县/类型/阶段/摘要/地点/建设单位/投资/规模/预警/正文全文
+        if (skwTokens.length || tkwTokens.length) {
+            var haystack = (p.name + '|' + (p.district || '') + '|' + (p.type || '') + '|' + (p.stage || '') +
+                '|' + (p.ai_summary || '') + '|' + (p.location || '') + '|' + (p.developer || '') +
+                '|' + (p.investment || '') + '|' + (p.scale || '') + '|' + (p.warning || '') +
+                '|' + (p.content || '')).toLowerCase();
+            for (var si = 0; si < skwTokens.length; si++) {
+                if (haystack.indexOf(skwTokens[si]) === -1) return false;
+            }
+            for (var ti = 0; ti < tkwTokens.length; ti++) {
+                if (haystack.indexOf(tkwTokens[ti]) === -1) return false;
+            }
         }
         return true;
     });
@@ -1419,13 +1433,20 @@ function applyProcessedFilters() {
     var month = document.getElementById('filterProcessedMonth').value;
     var search = (document.getElementById('searchProcessedInput').value || '').trim().toLowerCase();
 
+    var searchTokens = search ? search.split(/[\s,，、]+/).filter(Boolean) : [];
     filteredProcessedProjects = (allData.project_list || []).filter(function(p) {
         if (district && p.district !== district) return false;
         if (warning && p.warning !== warning) return false;
-        if (month && (!p.date || p.date.indexOf(month) !== 0)) return false;
-        if (search) {
-            var haystack = (p.name + '|' + (p.district || '') + '|' + (p.type || '') + '|' + (p.stage || '') + '|' + (p.ai_summary || '')).toLowerCase();
-            if (haystack.indexOf(search) === -1) return false;
+        // 搜索词有词时跳过月份筛选（全库搜索）
+        if (searchTokens.length === 0 && month && (!p.date || p.date.indexOf(month) !== 0)) return false;
+        if (searchTokens.length) {
+            var haystack = (p.name + '|' + (p.district || '') + '|' + (p.type || '') + '|' + (p.stage || '') +
+                '|' + (p.ai_summary || '') + '|' + (p.location || '') + '|' + (p.developer || '') +
+                '|' + (p.investment || '') + '|' + (p.scale || '') + '|' + (p.warning || '') +
+                '|' + (p.content || '')).toLowerCase();
+            for (var pi = 0; pi < searchTokens.length; pi++) {
+                if (haystack.indexOf(searchTokens[pi]) === -1) return false;
+            }
         }
         return true;
     });
