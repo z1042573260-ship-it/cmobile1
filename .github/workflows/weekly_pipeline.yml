@@ -56,6 +56,22 @@ jobs:
             echo "数据无变化，跳过提交"
           fi
 
+      # 提交 AI 分析断点（失败也提交）：ai_pipeline 每成功一条即落盘 checkpoint，
+      # 中断后下次 checkout 自动带上，按 _source_db_id 跳过已分析、只补未分析的。
+      # /data/ 被 gitignore 忽略，需 -f 强制提交；仅这一个 checkpoint 文件入仓库。
+      - name: 提交断点（失败也提交，保证下次可续跑）
+        if: always()
+        run: |
+          git config user.name "pipeline-bot"
+          git config user.email "actions@github.com"
+          git add -f data/unified_intelligence.checkpoint.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(data): 更新 AI 分析断点 $(date +'%Y-%m-%d %H:%M')"
+            git push
+          else
+            echo "断点无变化"
+          fi
+
   # 部署到 GitHub Pages（frontend/ 目录）。
   # Pages 设置：Settings → Pages → Source 选 "GitHub Actions"（不是 Deploy from a branch，
   # 分支部署只支持根目录或 /docs，不支持 /frontend）
