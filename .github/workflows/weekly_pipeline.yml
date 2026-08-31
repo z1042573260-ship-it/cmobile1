@@ -33,7 +33,7 @@ jobs:
           python-version: '3.10'
 
       - name: 安装依赖
-        run: pip install --quiet pymysql requests beautifulsoup4 lxml sqlalchemy pandas openpyxl loguru schedule python-dotenv flask flask-sqlalchemy
+        run: pip install --quiet -r requirements.txt
 
       - name: 运行完整管线（爬虫→AI→坐标→入库→导出→邮件）
         env:
