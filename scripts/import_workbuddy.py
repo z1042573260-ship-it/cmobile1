@@ -128,8 +128,13 @@ def fill_missing_coords(results: list[dict]) -> tuple:
         print(f"[WARN] 高德模块加载失败，跳过坐标补全: {e}")
         return 0, sum(1 for r in results if r.get("lng") is None or r.get("lat") is None)
 
-    filled = still_missing = 0
+    filled = still_missing = skipped = 0
     for idx, it in enumerate(results):
+        # 无预警记录不入库（upsert 时硬性跳过），坐标无意义 → 不联网搜索，
+        # 省掉高德/POI/百度搜索开销（无预警通常是"无商机价值"的流程公告）
+        if (it.get("warning_level") or "") == "无预警":
+            skipped += 1
+            continue
         # 已有合法坐标 → 保留
         try:
             lng, lat = float(it.get("lng")), float(it.get("lat"))
@@ -214,6 +219,8 @@ def fill_missing_coords(results: list[dict]) -> tuple:
             except Exception:
                 pass
             still_missing += 1
+    if skipped:
+        print(f"[坐标补全] 跳过 {skipped} 条无预警记录（不入库，不联网搜索）")
     return filled, still_missing
 
 

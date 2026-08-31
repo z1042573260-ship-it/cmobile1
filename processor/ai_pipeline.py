@@ -507,13 +507,17 @@ def analyze_project(title: str, content: str, publish_date: str,
     return result
 
 
-def analyze_batch(records: list[dict], verbose: bool = True) -> list[dict]:
+def analyze_batch(records: list[dict], verbose: bool = True,
+                  checkpoint_path: str = None) -> list[dict]:
     """
-    批量 AI 分析。
+    批量 AI 分析（带断点续跑）。
 
     Args:
         records: 汇总后的记录列表（每条含 title, content, source_url, publish_date, source_name）
         verbose: 是否打印详细进度
+        checkpoint_path: 断点续跑文件路径（可选）。若存在，已成功分析的记录
+            （按 _source_db_id 去重）从磁盘恢复并跳过重跑；每成功分析一条即时
+            落盘，中断后重跑只补未分析的，不重复消耗智谱 API 配额。
 
     Returns:
         成功分析的完整结果列表（包含所有字段，不做过滤）
@@ -522,9 +526,56 @@ def analyze_batch(records: list[dict], verbose: bool = True) -> list[dict]:
     total = len(records)
     prev_start = time.time()  # 节流基准：保证相邻请求间隔 ≥60s
 
-    logger.info(f"[Stage 1] 开始 AI 深度推理分析，共 {total} 条...")
+    # ---- 断点续跑：加载已有 checkpoint ----
+    # checkpoint 保存已成功分析的完整结果（含 _source_db_id），
+    # 下次运行按 _source_db_id 跳过重跑，不重复消耗智谱 API 配额。
+    done_ids = set()
+    checkpoint_by_id = {}
+    if checkpoint_path:
+        cp = Path(checkpoint_path)
+        if cp.exists():
+            try:
+                with open(cp, "r", encoding="utf-8") as f:
+                    checkpoint = json.load(f)
+                for it in checkpoint:
+                    rid = it.get("_source_db_id")
+                    if rid is not None:
+                        rid = int(rid)
+                        done_ids.add(rid)
+                        checkpoint_by_id[rid] = it
+                logger.info(f"[Stage 1] 断点续跑：从 {checkpoint_path} 恢复 "
+                            f"{len(checkpoint_by_id)} 条已分析结果，跳过重跑")
+            except Exception as e:
+                logger.warning(f"[Stage 1] 断点文件加载失败({e})，全量重跑")
+
+    # 恢复的结果按 records 顺序并入（保序，与全量跑一致）
+    for rec in records:
+        rid = rec.get("_source_db_id")
+        if rid is not None:
+            rid = int(rid)
+            if rid in checkpoint_by_id:
+                results.append(checkpoint_by_id[rid])
+
+    def _save_checkpoint():
+        """原子写入 checkpoint（先写临时文件再替换，避免写一半损坏）"""
+        try:
+            cp = Path(checkpoint_path)
+            cp.parent.mkdir(parents=True, exist_ok=True)
+            tmp = cp.with_suffix(".tmp")
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(results, f, ensure_ascii=False, indent=2)
+            tmp.replace(cp)
+        except Exception as e:
+            logger.warning(f"[Stage 1] 断点保存失败: {e}")
+
+    logger.info(f"[Stage 1] 开始 AI 深度推理分析，共 {total} 条"
+                f"（待分析 {total - len(done_ids)} 条）...")
 
     for i, rec in enumerate(records):
+        rid = rec.get("_source_db_id")
+        if rid is not None and int(rid) in done_ids:
+            continue  # 已分析过，跳过（checkpoint 恢复）
+
         title = str(rec.get("title", ""))
         content = str(rec.get("content", ""))
         url = str(rec.get("source_url", ""))
@@ -558,6 +609,10 @@ def analyze_batch(records: list[dict], verbose: bool = True) -> list[dict]:
         ai_res["_source_db_id"] = rec.get("_source_db_id")
 
         results.append(ai_res)
+
+        # 断点续跑：每成功一条即时落盘（中断后最多丢当前 1 条）
+        if checkpoint_path:
+            _save_checkpoint()
 
         if verbose:
             logger.info(
@@ -826,8 +881,10 @@ def run_unified_pipeline(input_records: list[dict],
         logger.warning("无有效记录，管线终止")
         return []
 
-    # Stage 1: AI 深度推理分析
-    results = analyze_batch(input_records, verbose=verbose)
+    # Stage 1: AI 深度推理分析（断点续跑：中断重跑只补未分析的，不重复消耗智谱配额）
+    checkpoint_path = str(Path(output_json_path).with_suffix("")) + ".checkpoint.json"
+    results = analyze_batch(input_records, verbose=verbose,
+                            checkpoint_path=checkpoint_path)
 
     if not results:
         logger.warning("AI 分析后无结果，管线终止")
