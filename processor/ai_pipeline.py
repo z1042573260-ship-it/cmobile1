@@ -926,14 +926,28 @@ def _clean_unified_result(result: dict) -> dict:
         if key not in result or result[key] is None:
             result[key] = default
 
-    # 字符串字段去空格
+    # 文本字段强制规范为字符串（与 workbuddy.json 格式一致）
+    # AI 偶尔会把 coverage_area/ai_reason 等文本字段输出成 dict/list →
+    # SQLite 写库报 sqlite3.InterfaceError('Error binding parameter 17')。
+    # 这里统一转成字符串（dict/list 序列化为 JSON 文本），保证全链路类型一致。
     str_fields = [
         "project_name", "project_type", "district", "location", "scale",
         "investment", "content", "developer", "contact_person", "contact_phone",
         "deadline", "start_date", "end_date", "source_name", "source_url",
         "publish_date", "need_base_station", "base_station_type",
         "coverage_area", "ai_reason", "warning_level", "status", "ai_summary",
+        "contact_clues", "action_suggestion", "owner_builder", "project_stage",
     ]
+    for key in str_fields:
+        v = result.get(key)
+        if isinstance(v, (dict, list)):
+            result[key] = json.dumps(v, ensure_ascii=False)
+        elif isinstance(v, bool):
+            result[key] = "是" if v else "否"
+        elif v is not None and not isinstance(v, str):
+            result[key] = str(v)
+
+    # 字符串字段去空格
     for key in str_fields:
         if isinstance(result.get(key), str):
             result[key] = result[key].strip()
