@@ -41,17 +41,18 @@ stages:
         commands:
           - pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
           - pip3 install --quiet -r requirements.txt
-          # 诊断：打印变量是否注入（只显示前 15 字符，不泄露完整值）
-          - echo "DIAG TIDB=[${TIDB_DATABASE_URL:0:15}] ZHIPU=[${ZHIPU_API_KEY:0:6}] AMAP=[${AMAP_KEY:0:6}] EMAIL=[${EMAIL_PASSWORD:0:4}]"
-          # 关键：Gitee Go 的 $变量名 只在 YAML 配置层做文本替换，
-          # 必须显式 export 到 shell 环境，Python 的 os.getenv 才能读到。
-          # （variables 声明 + export 缺一不可）
-          - export TIDB_DATABASE_URL="$TIDB_DATABASE_URL"
-          - export ZHIPU_API_KEY="$ZHIPU_API_KEY"
-          - export XFYUN_API_KEY="$XFYUN_API_KEY"
-          - export XFYUN_API_SECRET="$XFYUN_API_SECRET"
-          - export AMAP_KEY="$AMAP_KEY"
-          - export EMAIL_SENDER="$EMAIL_SENDER"
-          - export EMAIL_PASSWORD="$EMAIL_PASSWORD"
-          - export EMAIL_RECIPIENTS="$EMAIL_RECIPIENTS"
+          # 诊断（只打印变量名，不打印值，安全）：看 Gitee Go 到底注入了哪些相关变量
+          - echo "===== ENV 变量名清单（含关键变量）====="
+          - env | cut -d= -f1 | sort | grep -iE 'TIDB|ZHIPU|XFYUN|AMAP|EMAIL|KEY|SECRET|TOKEN|DATABASE|DB_' || echo "(未找到任何相关变量)"
+          # 关键：Gitee Go 变量是【文本替换】机制，用 ${变量名} 引用才会替换成真实值
+          - export TIDB_DATABASE_URL='${TIDB_DATABASE_URL}'
+          - export ZHIPU_API_KEY='${ZHIPU_API_KEY}'
+          - export XFYUN_API_KEY='${XFYUN_API_KEY}'
+          - export XFYUN_API_SECRET='${XFYUN_API_SECRET}'
+          - export AMAP_KEY='${AMAP_KEY}'
+          - export EMAIL_SENDER='${EMAIL_SENDER}'
+          - export EMAIL_PASSWORD='${EMAIL_PASSWORD}'
+          - export EMAIL_RECIPIENTS='${EMAIL_RECIPIENTS}'
+          # 诊断：export 后 shell 环境里变量是否非空（用 test 判断，不打印值）
+          - echo "DIAG: TIDB=$([ -n \"$TIDB_DATABASE_URL\" ] && echo OK || echo EMPTY) ZHIPU=$([ -n \"$ZHIPU_API_KEY\" ] && echo OK || echo EMPTY) AMAP=$([ -n \"$AMAP_KEY\" ] && echo OK || echo EMPTY) EMAIL=$([ -n \"$EMAIL_PASSWORD\" ] && echo OK || echo EMPTY)"
           - python3 crawler/scheduler.py
