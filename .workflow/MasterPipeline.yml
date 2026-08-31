@@ -41,18 +41,17 @@ stages:
         commands:
           - pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
           - pip3 install --quiet -r requirements.txt
-          # 诊断（只打印变量名，不打印值，安全）：看 Gitee Go 到底注入了哪些相关变量
-          - echo "===== ENV 变量名清单（含关键变量）====="
-          - env | cut -d= -f1 | sort | grep -iE 'TIDB|ZHIPU|XFYUN|AMAP|EMAIL|KEY|SECRET|TOKEN|DATABASE|DB_' || echo "(未找到任何相关变量)"
-          # 关键：Gitee Go 变量是【文本替换】机制，用 ${变量名} 引用才会替换成真实值
-          - export TIDB_DATABASE_URL='${TIDB_DATABASE_URL}'
-          - export ZHIPU_API_KEY='${ZHIPU_API_KEY}'
-          - export XFYUN_API_KEY='${XFYUN_API_KEY}'
-          - export XFYUN_API_SECRET='${XFYUN_API_SECRET}'
-          - export AMAP_KEY='${AMAP_KEY}'
-          - export EMAIL_SENDER='${EMAIL_SENDER}'
-          - export EMAIL_PASSWORD='${EMAIL_PASSWORD}'
-          - export EMAIL_RECIPIENTS='${EMAIL_RECIPIENTS}'
-          # 诊断：export 后 shell 环境里变量是否非空（用 test 判断，不打印值）
-          - echo "DIAG: TIDB=$([ -n \"$TIDB_DATABASE_URL\" ] && echo OK || echo EMPTY) ZHIPU=$([ -n \"$ZHIPU_API_KEY\" ] && echo OK || echo EMPTY) AMAP=$([ -n \"$AMAP_KEY\" ] && echo OK || echo EMPTY) EMAIL=$([ -n \"$EMAIL_PASSWORD\" ] && echo OK || echo EMPTY)"
+          # 诊断：shell 环境里变量长度（${#VAR} 是 shell 语法，Gitee Go 原样执行由 shell 展开）
+          - echo "LEN1 TIDB=${#TIDB_DATABASE_URL} ZHIPU=${#ZHIPU_API_KEY} AMAP=${#AMAP_KEY} EMAIL=${#EMAIL_PASSWORD}"
+          # 关键：Gitee Go 不做变量替换，用双引号让 shell 从 env 展开变量值
+          - export TIDB_DATABASE_URL="$TIDB_DATABASE_URL"
+          - export ZHIPU_API_KEY="$ZHIPU_API_KEY"
+          - export XFYUN_API_KEY="$XFYUN_API_KEY"
+          - export XFYUN_API_SECRET="$XFYUN_API_SECRET"
+          - export AMAP_KEY="$AMAP_KEY"
+          - export EMAIL_SENDER="$EMAIL_SENDER"
+          - export EMAIL_PASSWORD="$EMAIL_PASSWORD"
+          - export EMAIL_RECIPIENTS="$EMAIL_RECIPIENTS"
+          # 诊断：export 后长度（>0 说明变量值已进入 shell 环境）
+          - echo "LEN2 TIDB=${#TIDB_DATABASE_URL} ZHIPU=${#ZHIPU_API_KEY} AMAP=${#AMAP_KEY} EMAIL=${#EMAIL_PASSWORD}"
           - python3 crawler/scheduler.py
