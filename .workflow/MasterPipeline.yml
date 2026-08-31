@@ -1,0 +1,39 @@
+# ============================================================
+# Gitee Go 每周自动化管线（国内 CI，可访问政务网站）
+# 触发：定时（北京时间周一 09:15）+ 手动触发
+# 前置：Gitee 仓库 → 设置 → 变量设置 配置（与 GitHub Secrets 相同值）：
+#   TIDB_DATABASE_URL  完整 TiDB 连接串（含密码，ssl_ca=config/tidb_ca.pem 相对路径）
+#   ZHIPU_API_KEY      智谱 GLM API Key（glm-4-flash 免费）
+#   XFYUN_API_KEY / XFYUN_API_SECRET  讯飞星火（坐标搜索补全）
+#   AMAP_KEY           高德 Web 服务 Key（坐标补全；本地读 processor/.amap_key 兜底）
+#   EMAIL_PASSWORD     QQ 邮箱授权码（周报邮件；不配则跳过发信）
+# 注意：Gitee Go 环境变量用 $变量名 引用（变量设置在 仓库/设置/变量设置）
+# ============================================================
+version: '1.0'
+name: weekly-pipeline
+displayName: 每周自动化管线（爬虫→AI→坐标→入库→导出→邮件）
+triggers:
+  trigger: auto
+  schedule:
+    # 北京时间每周一 09:15（Gitee cron: 秒 分 时 日 月 星期(1=周日) 年；周一=2）
+    - cron: '0 15 9 ? * 2 *'
+stages:
+  - name: pipeline
+    displayName: 运行完整管线
+    strategy: naturally
+    trigger: auto
+    steps:
+      - step: build@python
+        name: run_pipeline
+        displayName: 爬虫→AI→坐标补全→入库→导出→邮件
+        pythonVersion: '3.10'
+        commands:
+          - pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+          - pip3 install --quiet -r requirements.txt
+          - export TIDB_DATABASE_URL="$TIDB_DATABASE_URL"
+          - export ZHIPU_API_KEY="$ZHIPU_API_KEY"
+          - export XFYUN_API_KEY="$XFYUN_API_KEY"
+          - export XFYUN_API_SECRET="$XFYUN_API_SECRET"
+          - export AMAP_KEY="$AMAP_KEY"
+          - export EMAIL_PASSWORD="$EMAIL_PASSWORD"
+          - python3 crawler/scheduler.py
