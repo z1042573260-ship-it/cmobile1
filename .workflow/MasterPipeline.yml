@@ -1,17 +1,28 @@
 # ============================================================
 # Gitee Go 每周自动化管线（国内 CI，可访问政务网站）
 # 触发：定时（北京时间周一 09:15）+ 手动触发
-# 前置：Gitee 仓库 → 设置 → 变量设置 配置（与 GitHub Secrets 相同值）：
+# 前置：Gitee 仓库 → 管理 → 环境变量管理 配置（与 GitHub Secrets 相同值）：
 #   TIDB_DATABASE_URL  完整 TiDB 连接串（含密码，ssl_ca=config/tidb_ca.pem 相对路径）
 #   ZHIPU_API_KEY      智谱 GLM API Key（glm-4-flash 免费）
 #   XFYUN_API_KEY / XFYUN_API_SECRET  讯飞星火（坐标搜索补全）
 #   AMAP_KEY           高德 Web 服务 Key（坐标补全；本地读 processor/.amap_key 兜底）
 #   EMAIL_PASSWORD     QQ 邮箱授权码（周报邮件；不配则跳过发信）
-# 注意：Gitee Go 环境变量用 $变量名 引用（变量设置在 仓库/设置/变量设置）
+# ⚠️ 关键：Gitee Go 的仓库变量【不会自动注入流水线】——必须在下方 variables
+#   字段中声明引用才会生效（否则 commands 里 $变量名 为空 → DATABASE_URL 空串报错）
 # ============================================================
 version: '1.0'
 name: weekly-pipeline
 displayName: 每周自动化管线（爬虫→AI→坐标→入库→导出→邮件）
+# 声明引用仓库变量（仓库/管理/环境变量管理 中配置的同名变量）
+variables:
+  - TIDB_DATABASE_URL
+  - ZHIPU_API_KEY
+  - XFYUN_API_KEY
+  - XFYUN_API_SECRET
+  - AMAP_KEY
+  - EMAIL_SENDER
+  - EMAIL_PASSWORD
+  - EMAIL_RECIPIENTS
 triggers:
   trigger: auto
   schedule:
@@ -30,10 +41,5 @@ stages:
         commands:
           - pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
           - pip3 install --quiet -r requirements.txt
-          - export TIDB_DATABASE_URL="$TIDB_DATABASE_URL"
-          - export ZHIPU_API_KEY="$ZHIPU_API_KEY"
-          - export XFYUN_API_KEY="$XFYUN_API_KEY"
-          - export XFYUN_API_SECRET="$XFYUN_API_SECRET"
-          - export AMAP_KEY="$AMAP_KEY"
-          - export EMAIL_PASSWORD="$EMAIL_PASSWORD"
+          # 声明的变量已注入构建环境，直接可用（无需手动 export）
           - python3 crawler/scheduler.py
