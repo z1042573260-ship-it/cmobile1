@@ -99,7 +99,16 @@ def run_all_spiders(app) -> dict:
                 )
 
             except Exception as e:
-                finish_crawl_log(log_entry.id, 0, 0, "failed", str(e))
+                # 断连后 session 处于失效状态，先 rollback 清掉 invalid transaction，
+                # 否则下面 finish_crawl_log 访问 log_entry.id 会二次崩溃（PendingRollbackError）
+                try:
+                    db.session.rollback()
+                except Exception:
+                    pass
+                try:
+                    finish_crawl_log(log_entry.id, 0, 0, "failed", str(e))
+                except Exception as log_e:
+                    logger.error(f"  {spider.source_name}: 写失败日志时出错 - {log_e}")
                 summary.append({
                     "name": spider.name,
                     "source": spider.source_name,
@@ -248,6 +257,16 @@ def main():
     app.config["SECRET_KEY"] = FLASK_SECRET_KEY
     app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    # TiDB 公网连接会被服务端按空闲超时回收（一般 ~10 分钟），
+    # 连接池需 pool_pre_ping 取连时校验存活 + pool_recycle 定期回收，
+    # 否则闲置后再查询会拿死连接 → (2013, 'Lost connection to MySQL server during query')
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,
+        "pool_recycle": 600,      # 600s 回收，早于 TiDB 空闲超时
+        "pool_timeout": 30,
+        "pool_size": 5,
+        "max_overflow": 5,
+    }
 
     db.init_app(app)
 
