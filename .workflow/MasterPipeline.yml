@@ -41,6 +41,8 @@ stages:
         commands:
           - pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
           - pip3 install --quiet -r requirements.txt
+          # 诊断：打印变量是否注入（只显示前 15 字符，不泄露完整值）
+          - echo "DIAG TIDB=[${TIDB_DATABASE_URL:0:15}] ZHIPU=[${ZHIPU_API_KEY:0:6}] AMAP=[${AMAP_KEY:0:6}] EMAIL=[${EMAIL_PASSWORD:0:4}]"
           # 关键：Gitee Go 的 $变量名 只在 YAML 配置层做文本替换，
           # 必须显式 export 到 shell 环境，Python 的 os.getenv 才能读到。
           # （variables 声明 + export 缺一不可）
