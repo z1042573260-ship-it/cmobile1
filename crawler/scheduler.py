@@ -233,7 +233,11 @@ def run_pipeline(app):
     from notifier.email_sender import send_report_email
     from config.settings import EMAIL_RECIPIENTS
     try:
-        ok = send_report_email([e.strip() for e in EMAIL_RECIPIENTS if e.strip()])
+        # report2.html 是当前生效报告（report.html 被 gitignore 忽略，CI 上不存在）
+        ok = send_report_email(
+            [e.strip() for e in EMAIL_RECIPIENTS if e.strip()],
+            "report2.html",
+        )
         logger.info(f"✅ 周报邮件发送{'成功' if ok else '失败'}")
     except Exception as e:
         logger.error(f"❌ 周报邮件发送异常: {e}")

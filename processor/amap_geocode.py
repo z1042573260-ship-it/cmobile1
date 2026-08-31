@@ -10,7 +10,20 @@
 import json, urllib.parse, urllib.request, time, os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-KEY = open(os.path.join(HERE, ".amap_key"), encoding="utf-8").read().strip()
+
+def _load_key():
+    """高德 Key：环境变量 AMAP_KEY 优先（CI/线上用 GitHub Secrets 注入），
+    本地兜底读同目录 .amap_key 文件（.amap_key 被 gitignore，不入库）。"""
+    env = os.getenv("AMAP_KEY", "").strip()
+    if env:
+        return env
+    key_file = os.path.join(HERE, ".amap_key")
+    if os.path.exists(key_file):
+        with open(key_file, encoding="utf-8") as f:
+            return f.read().strip()
+    return ""
+
+KEY = _load_key()
 BASE = "https://restapi.amap.com/v3/geocode/geo"
 PLACE_BASE = "https://restapi.amap.com/v3/place/text"   # POI 搜索（项目名/园区/企业检索，命中率高于 geocode）
 SLEEP = 0.4          # 请求间隔，避免 QPS 限流

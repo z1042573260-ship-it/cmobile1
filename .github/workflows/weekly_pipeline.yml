@@ -7,6 +7,7 @@
 #   TIDB_DATABASE_URL  完整 TiDB 连接串（含密码，ssl_ca=config/tidb_ca.pem 相对路径）
 #   ZHIPU_API_KEY      智谱 GLM API Key（glm-4-flash 免费）
 #   XFYUN_API_KEY / XFYUN_API_SECRET  讯飞星火（坐标搜索补全）
+#   AMAP_KEY           高德 Web 服务 Key（坐标补全；本地读 processor/.amap_key 兜底）
 #   EMAIL_PASSWORD     QQ 邮箱授权码（周报邮件；不配则跳过发信）
 # ============================================================
 name: 每周自动化管线
@@ -41,6 +42,7 @@ jobs:
           ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
           XFYUN_API_KEY: ${{ secrets.XFYUN_API_KEY }}
           XFYUN_API_SECRET: ${{ secrets.XFYUN_API_SECRET }}
+          AMAP_KEY: ${{ secrets.AMAP_KEY }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         run: python crawler/scheduler.py
 
