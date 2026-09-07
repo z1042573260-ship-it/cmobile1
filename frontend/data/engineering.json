@@ -1,0 +1,1364 @@
+{
+ "_comment": "施工图数据（由 scripts/excel_to_engineering.py 从施工 Excel 生成，勿手改）。district 用标准区县名；level=红(干线)/橙(骨干汇聚)/黄(其他)；status=施工中/已完工/未开工/暂停施工；start/end=[lng,lat]，无坐标=null（地图不画线仅列表）；cable_count=影响光缆条数, biz_level=影响业务最高级别, biz_desc=施工影响主要业务描述。",
+ "source_file": "施工.xlsx",
+ "generated_at": "2026-09-07",
+ "district_ranking": [
+  {
+   "name": "芝罘区",
+   "value": 21
+  },
+  {
+   "name": "海阳市",
+   "value": 12
+  },
+  {
+   "name": "福山区",
+   "value": 9
+  },
+  {
+   "name": "龙口市",
+   "value": 7
+  },
+  {
+   "name": "莱阳市",
+   "value": 3
+  },
+  {
+   "name": "牟平区",
+   "value": 3
+  },
+  {
+   "name": "栖霞市",
+   "value": 3
+  },
+  {
+   "name": "开发区",
+   "value": 3
+  },
+  {
+   "name": "莱山区",
+   "value": 2
+  },
+  {
+   "name": "蓬莱区",
+   "value": 2
+  }
+ ],
+ "roads": [
+  {
+   "name": "海东路",
+   "district": "海阳市",
+   "level": "黄",
+   "status": "已完工",
+   "road": "海东路",
+   "start": [
+    121.16710775892201,
+    36.77490762053899
+   ],
+   "end": [
+    121.16897428193172,
+    36.77505584349584
+   ],
+   "length_km": 0.2,
+   "jiaodi": "是",
+   "jiaodi_date": "2025.6.15",
+   "cable_count": 2,
+   "biz_level": "多PON口",
+   "biz_desc": "文山街光交至光交3\n文山街至三医院。超千户"
+  },
+  {
+   "name": "金堡路",
+   "district": "莱山区",
+   "level": "橙",
+   "status": "施工中",
+   "road": "金堡路",
+   "start": [
+    121.45500540733339,
+    37.43731407346616
+   ],
+   "end": [
+    121.45534604787828,
+    37.43831503735395
+   ],
+   "length_km": 0.2,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.1.31",
+   "cable_count": 5,
+   "biz_level": "汇聚、接入、多PON口",
+   "biz_desc": "黄家疃至于家滩、黄家疃至京华眼科，超千户"
+  },
+  {
+   "name": "南站改扩建",
+   "district": "莱山区",
+   "level": "红",
+   "status": "施工中",
+   "road": "南站改扩建",
+   "start": [
+    121.394187,
+    37.427828
+   ],
+   "end": [
+    121.38457059860231,
+    37.43184687062958
+   ],
+   "length_km": 3,
+   "jiaodi": "是",
+   "jiaodi_date": "2025.9.15",
+   "cable_count": 6,
+   "biz_level": "汇聚、干线",
+   "biz_desc": "黄家疃-新黄务、黄家疃-老黄务、黄家疃-华润、黄家疃-滨海路、黄家疃-东昌热电、创进-威海"
+  },
+  {
+   "name": "富山路至祝家庙东",
+   "district": "莱阳市",
+   "level": "橙",
+   "status": "暂停施工",
+   "road": "富山路至祝家庙东",
+   "start": [
+    120.52686,
+    36.961744
+   ],
+   "end": [
+    120.762824,
+    36.951238
+   ],
+   "length_km": 0.2,
+   "jiaodi": "是",
+   "jiaodi_date": "2025.9.10",
+   "cable_count": 6,
+   "biz_level": "汇聚、接入、多PON口",
+   "biz_desc": "莱阳-大夼、莱阳-海阳、祝家庙基站-明玉食品厂",
+   "coord_conflict": true
+  },
+  {
+   "name": "西郊路（三山大街至雷神庙大街）路段",
+   "district": "牟平区",
+   "level": "橙",
+   "status": "施工中",
+   "road": "西郊路（三山大街至雷神庙大街）路段",
+   "start": [
+    121.57920583,
+    37.43401659
+   ],
+   "end": [
+    121.5777469,
+    37.41451689
+   ],
+   "length_km": 5,
+   "jiaodi": "是",
+   "jiaodi_date": "2025.9.3",
+   "cable_count": 10,
+   "biz_level": "汇聚",
+   "biz_desc": "慢城宁海至陈家疃西汇聚。慢城宁海--通海路上行，瀛洲宁海-通海路上行。16个PON口（三山大街到金埠大街，6个，三山大街到紫金山庄光交10个，）"
+  },
+  {
+   "name": "牟平雷神庙大街",
+   "district": "牟平区",
+   "level": "黄",
+   "status": "暂停施工",
+   "road": "牟平雷神庙大街",
+   "start": [
+    121.58289178,
+    37.371135552
+   ],
+   "end": [
+    121.591903389,
+    37.37094221
+   ],
+   "length_km": 4,
+   "jiaodi": "是",
+   "jiaodi_date": "2025.12.3",
+   "cable_count": 3,
+   "biz_level": "汇聚、接入层，PON口",
+   "biz_desc": "牟家庄至正阳路，正阳路至瀛洲宁海，基站业务，超千户（2个方向）。正阳路机房至南华街光交至雷神牟山至留德街光交，42个，正阳路机房至正阳雷神光交至东关雷神至昆嵛山路雷神庙大街光交，38个，正阳路-玉林店-水道-埠西头汇聚"
+  },
+  {
+   "name": "西安路",
+   "district": "海阳市",
+   "level": "橙",
+   "status": "已完工",
+   "road": "西安路",
+   "start": [
+    121.116449,
+    36.729901
+   ],
+   "end": [
+    121.114329,
+    36.732952
+   ],
+   "length_km": 0.2,
+   "jiaodi": "是",
+   "jiaodi_date": "2025.10.10",
+   "cable_count": 1,
+   "biz_level": "骨干汇聚",
+   "biz_desc": "温州街至莱阳"
+  },
+  {
+   "name": "机场路（道路施工）",
+   "district": "芝罘区",
+   "level": "黄",
+   "status": "施工中",
+   "road": "机场路（道路施工）",
+   "start": [
+    121.3589525,
+    37.44029043
+   ],
+   "end": [
+    121.35892825,
+    37.43982597
+   ],
+   "length_km": 1.5,
+   "jiaodi": "是",
+   "jiaodi_date": "2025.4.29",
+   "cable_count": 20,
+   "biz_level": "黄务-电商产业园波分，黄务-黄家疃波分，多PON口等",
+   "biz_desc": "上尧办事处OLT、阳光上城OLT PON口等，超千户，黄务-黄家疃、电商产业园波分备用，世回尧接入环，世回尧专网OlT，交警等"
+  },
+  {
+   "name": "大闫家205",
+   "district": "海阳市",
+   "level": "橙",
+   "status": "已完工",
+   "road": "大闫家205",
+   "start": [
+    121.1068617,
+    36.681703
+   ],
+   "end": [
+    121.1078496,
+    36.6819974888
+   ],
+   "length_km": 0.1,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.1.31",
+   "cable_count": 10,
+   "biz_level": "汇聚，多pon口",
+   "biz_desc": "辛安至龙山街道"
+  },
+  {
+   "name": "红旗西路（鲁大西门）",
+   "district": "芝罘区",
+   "level": "橙",
+   "status": "施工中",
+   "road": "红旗西路（鲁大西门）",
+   "start": [
+    121.3541658,
+    37.51961184
+   ],
+   "end": [
+    121.36108455,
+    37.5188915
+   ],
+   "length_km": 0.5,
+   "jiaodi": "是",
+   "jiaodi_date": "2025.5.26",
+   "cable_count": 10,
+   "biz_level": "骨干汇聚",
+   "biz_desc": "创进至栖霞、黄金顶隧道西至黄务，黄金顶隧道西至傅家，黄金顶隧道西至大海阳，黄金顶隧道西OLT下行，鲁东大学无线等，"
+  },
+  {
+   "name": "沈海高速（宫家岛）",
+   "district": "芝罘区",
+   "level": "红",
+   "status": "施工中",
+   "road": "沈海高速（宫家岛）",
+   "start": [
+    121.29457205,
+    37.53563329
+   ],
+   "end": [
+    121.29766231,
+    37.53562062
+   ],
+   "length_km": 0.5,
+   "jiaodi": "是",
+   "jiaodi_date": "2025.8.9",
+   "cable_count": 8,
+   "biz_level": "干线备用、汇聚、接入",
+   "biz_desc": "创进至二枢纽波分、ptn等"
+  },
+  {
+   "name": "只楚立交桥",
+   "district": "芝罘区",
+   "level": "橙",
+   "status": "暂停施工",
+   "road": "只楚立交桥",
+   "start": null,
+   "end": null,
+   "length_km": 0.3,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.1.22",
+   "cable_count": 13,
+   "biz_level": "骨干汇聚，多pon口",
+   "biz_desc": "新西郊多pon口，幸福大厦到西郊ptn汇聚，"
+  },
+  {
+   "name": "二马路（热力）",
+   "district": "芝罘区",
+   "level": "橙",
+   "status": "暂停施工",
+   "road": "二马路（热力）",
+   "start": [
+    121.41157358243963,
+    37.53264229675894
+   ],
+   "end": [
+    121.416761,
+    37.53374
+   ],
+   "length_km": 0.1,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.2.27",
+   "cable_count": 8,
+   "biz_level": "市到县，多pon",
+   "biz_desc": "解放路一京华眼科，解放路一福山路二马路光交综合业务区"
+  },
+  {
+   "name": "幸福中路（电力修充电桩）",
+   "district": "芝罘区",
+   "level": "黄",
+   "status": "已完工",
+   "road": "幸福中路（电力修充电桩）",
+   "start": [
+    121.36668515,
+    37.56573096
+   ],
+   "end": [
+    121.36475026,
+    37.56583862
+   ],
+   "length_km": 0.2,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.3.2",
+   "cable_count": 4,
+   "biz_level": "多PON口等",
+   "biz_desc": "幸福中路电力新修充电桩，影响幸福大厦，沙旺仓库OLT上联及多pon口。"
+  },
+  {
+   "name": "龙门西路新奥燃气",
+   "district": "莱阳市",
+   "level": "黄",
+   "status": "已完工",
+   "road": "龙门西路新奥燃气",
+   "start": [
+    120.652401,
+    36.955412
+   ],
+   "end": [
+    120.652401,
+    36.955412
+   ],
+   "length_km": 0.1,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.3.4",
+   "cable_count": 8,
+   "biz_level": "OLT上行",
+   "biz_desc": "冯格庄周围天网监控冯格庄桃源庄OLT上行"
+  },
+  {
+   "name": "奇泉路与蒲湾街路口",
+   "district": "福山区",
+   "level": "橙",
+   "status": "已完工",
+   "road": "奇泉路与蒲湾街路口",
+   "start": [
+    121.23604,
+    37.518209
+   ],
+   "end": [
+    121.23604,
+    37.518209
+   ],
+   "length_km": 0.3,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.3.6",
+   "cable_count": 20,
+   "biz_level": "汇聚SPN",
+   "biz_desc": "汇聚SPN，河滨路-招贤SPN，家宽PON口，接入层，集客"
+  },
+  {
+   "name": "鲁东大学西围墙（紫荆山办事处挖沟）",
+   "district": "蓬莱区",
+   "level": "橙",
+   "status": "已完工",
+   "road": "鲁东大学西围墙（紫荆山办事处挖沟）",
+   "start": [
+    120.716818,
+    37.80074
+   ],
+   "end": [
+    120.71884,
+    37.798807
+   ],
+   "length_km": 0.3,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.3.6",
+   "cable_count": 5,
+   "biz_level": "波分汇聚",
+   "biz_desc": "师范-北沟汇聚波分，SPN7900，张赵，哑校OLT上行"
+  },
+  {
+   "name": "海阳路（县医院建天桥）",
+   "district": "海阳市",
+   "level": "红",
+   "status": "已完工",
+   "road": "海阳路（县医院建天桥）",
+   "start": [
+    121.164174,
+    36.778597
+   ],
+   "end": [
+    121.164117,
+    36.778608
+   ],
+   "length_km": 0.1,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.3.10",
+   "cable_count": 9,
+   "biz_level": "干线 汇聚层",
+   "biz_desc": "海阳至即墨干线 盛华国际pon。超千户"
+  },
+  {
+   "name": "福山区西埠庄大桥（园林栽树）",
+   "district": "福山区",
+   "level": "橙",
+   "status": "已完工",
+   "road": "福山区西埠庄大桥（园林栽树）",
+   "start": [
+    121.233665,
+    37.434834
+   ],
+   "end": [
+    121.23334,
+    37.434786
+   ],
+   "length_km": 1,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.3.12",
+   "cable_count": 15,
+   "biz_level": "汇聚波分",
+   "biz_desc": "移动至门楼波分、SPN"
+  },
+  {
+   "name": "XF县道",
+   "district": "福山区",
+   "level": "橙",
+   "status": "已完工",
+   "road": "XF县道",
+   "start": [
+    121.386063,
+    37.447664
+   ],
+   "end": [
+    121.306087,
+    37.449172
+   ],
+   "length_km": 0.2,
+   "jiaodi": "否",
+   "jiaodi_date": "2026.3.16",
+   "cable_count": 15,
+   "biz_level": "汇聚波分、SPN",
+   "biz_desc": "斗余至回里波分、SPN"
+  },
+  {
+   "name": "电厂东路至化工路",
+   "district": "芝罘区",
+   "level": "橙",
+   "status": "已完工",
+   "road": "电厂东路至化工路",
+   "start": null,
+   "end": null,
+   "length_km": 0.7,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.3.14",
+   "cable_count": 14,
+   "biz_level": "骨干汇聚，多pon口",
+   "biz_desc": "二枢纽至莱阳南线。铁路施工位置与光缆管道有交叉，新西郊OLTpin口，超千户"
+  },
+  {
+   "name": "福新街道-臧家西路与柳子河北路交叉路口-同兴路梧桐路-永达街聚福路-奇泉路-松霞路",
+   "district": "福山区",
+   "level": "橙",
+   "status": "施工中",
+   "road": "福新街道-臧家西路与柳子河北路交叉路口-同兴路梧桐路-永达街聚福路-奇泉路-松霞路",
+   "start": [
+    121.200611,
+    37.529042
+   ],
+   "end": [
+    121.271969,
+    37.534762
+   ],
+   "length_km": 10,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.3.20",
+   "cable_count": 20,
+   "biz_level": "骨干汇聚",
+   "biz_desc": "创进-二枢纽、实通-高疃的汇聚、多PON口、永达街-二枢纽汇聚备用、接入、集客"
+  },
+  {
+   "name": "海园路与盛竹路路口西侧",
+   "district": "海阳市",
+   "level": "橙",
+   "status": "已完工",
+   "road": "海园路与盛竹路路口西侧",
+   "start": [
+    121.163415,
+    36.787081
+   ],
+   "end": [
+    121.167473,
+    36.787384
+   ],
+   "length_km": 2,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.04.02",
+   "cable_count": 25,
+   "biz_level": "汇聚层，多pon口",
+   "biz_desc": "晓龙名都汇聚层,超千户"
+  },
+  {
+   "name": "龙海路-渔港路，和平路-环海路",
+   "district": "龙口市",
+   "level": "橙",
+   "status": "施工中",
+   "road": "龙海路-渔港路，和平路-环海路",
+   "start": [
+    120.325155,
+    37.650606
+   ],
+   "end": [
+    120.330955,
+    37.643325
+   ],
+   "length_km": 2.1,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.3.29",
+   "cable_count": 23,
+   "biz_level": "汇聚层",
+   "biz_desc": "市到县龙口-莱州、振兴路-黄城、振兴路-于高、振兴路-海岱、、北马-振兴路、的汇聚。振兴路OLT下行（南向）、龙口港营业厅OLT（南向）所有小区南向加起来接近上万户"
+  },
+  {
+   "name": "莱栖高速",
+   "district": "栖霞市",
+   "level": "橙",
+   "status": "施工中",
+   "road": "莱栖高速",
+   "start": [
+    120.603394,
+    37.351558
+   ],
+   "end": [
+    120.852113,
+    37.410489
+   ],
+   "length_km": 30,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.1.15",
+   "cable_count": 30,
+   "biz_level": "汇聚",
+   "biz_desc": "西城-松山波分，庄园-苏家店波分SPNPTN，邹家OLT,官道-庄园波分，PTN"
+  },
+  {
+   "name": "盛世路",
+   "district": "栖霞市",
+   "level": "橙",
+   "status": "已完工",
+   "road": "盛世路",
+   "start": [
+    120.828669,
+    37.24852
+   ],
+   "end": [
+    120.828672,
+    37.24852
+   ],
+   "length_km": 0.77,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.4.20",
+   "cable_count": null,
+   "biz_level": "汇聚，接入，集客",
+   "biz_desc": "庄园-松山PTN波分，建材-庄园PTN"
+  },
+  {
+   "name": "荷叶村东北厂房",
+   "district": "栖霞市",
+   "level": "黄",
+   "status": "暂停施工",
+   "road": "荷叶村东北厂房",
+   "start": [
+    120.890299,
+    37.137809
+   ],
+   "end": [
+    120.891522,
+    37.138033
+   ],
+   "length_km": 0.17,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.4.9",
+   "cable_count": null,
+   "biz_level": "OLT,接入",
+   "biz_desc": "连家庄OLT,蛇窝泊OLT"
+  },
+  {
+   "name": "芦头大街",
+   "district": "龙口市",
+   "level": "黄",
+   "status": "已完工",
+   "road": "芦头大街",
+   "start": [
+    120.461101,
+    37.618622
+   ],
+   "end": [
+    120.460499,
+    37.605703
+   ],
+   "length_km": 1.5,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.4.7",
+   "cable_count": null,
+   "biz_level": "接入",
+   "biz_desc": "芦头李家OLT下挂pon口33个，约800户"
+  },
+  {
+   "name": "东关路三山大街路口园林施工",
+   "district": "牟平区",
+   "level": "橙",
+   "status": "暂停施工",
+   "road": "东关路三山大街路口园林施工",
+   "start": [
+    121.60850879248642,
+    37.418094687129496
+   ],
+   "end": [
+    121.60959630674995,
+    37.41817255851902
+   ],
+   "length_km": 0.2,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.4.10",
+   "cable_count": null,
+   "biz_level": "汇聚、接入、多PON口",
+   "biz_desc": "波分牟平通海路---芝罘创进4楼OXC，海德清洁机基站业务，东海城，悦岛蓝湾，石药建康城，北系山多PON口"
+  },
+  {
+   "name": "福山区柳子河路臧家高铁桥下",
+   "district": "福山区",
+   "level": "橙",
+   "status": "已完工",
+   "road": "福山区柳子河路臧家高铁桥下",
+   "start": [
+    121.200211,
+    37.528105
+   ],
+   "end": [
+    121.200211,
+    37.528105
+   ],
+   "length_km": 0.1,
+   "jiaodi": "否",
+   "jiaodi_date": "2026.4.15",
+   "cable_count": 20,
+   "biz_level": "骨干汇聚",
+   "biz_desc": "解放路-二枢纽骨干汇聚，实通至高疃波分"
+  },
+  {
+   "name": "龙口裕龙岛岛外罐区管廊桥下",
+   "district": "龙口市",
+   "level": "黄",
+   "status": "已完工",
+   "road": "龙口裕龙岛岛外罐区管廊桥下",
+   "start": [
+    120.290588,
+    37.571616
+   ],
+   "end": [
+    120.289134,
+    37.572693
+   ],
+   "length_km": 0.2,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.4.20",
+   "cable_count": null,
+   "biz_level": "SPN,多PON口",
+   "biz_desc": "裕龙岛西海岸服务区基站~黄山馆机房PTN-多PON口"
+  },
+  {
+   "name": "冰轮路港城西大街路口",
+   "district": "芝罘区",
+   "level": "橙",
+   "status": "未开工",
+   "road": "冰轮路港城西大街路口",
+   "start": [
+    121.29614674,
+    37.48650187
+   ],
+   "end": [
+    121.29612514,
+    37.48556513
+   ],
+   "length_km": 0.2,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.4.20",
+   "cable_count": null,
+   "biz_level": "汇聚层",
+   "biz_desc": "新大楼-二枢纽波分、大海阳-福山48"
+  },
+  {
+   "name": "冰轮路魁玉路路口长输热力施工",
+   "district": "芝罘区",
+   "level": "橙",
+   "status": "暂停施工",
+   "road": "冰轮路魁玉路路口长输热力施工",
+   "start": [
+    121.29679204,
+    37.48994295
+   ],
+   "end": [
+    121.29666299,
+    37.48931265
+   ],
+   "length_km": 0.2,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.4.20",
+   "cable_count": null,
+   "biz_level": "汇聚层",
+   "biz_desc": "西郊-黄务48、西郊-西牟48、西牟综合业务区主干"
+  },
+  {
+   "name": "福海立交南30米",
+   "district": "福山区",
+   "level": "红",
+   "status": "暂停施工",
+   "road": "福海立交南30米",
+   "start": [
+    121.257114,
+    37.534051
+   ],
+   "end": [
+    121.275512,
+    37.535097
+   ],
+   "length_km": 1.8,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.4.23",
+   "cable_count": 8,
+   "biz_level": "干线",
+   "biz_desc": "创进至二枢纽南线，新大楼至二枢纽骨干，永安街至二枢纽骨干汇聚"
+  },
+  {
+   "name": "试北路",
+   "district": "龙口市",
+   "level": "橙",
+   "status": "已完工",
+   "road": "试北路",
+   "start": [
+    120.568238,
+    37.680271
+   ],
+   "end": [
+    120.550172,
+    37.661949
+   ],
+   "length_km": 2.3,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.4.20",
+   "cable_count": null,
+   "biz_level": "汇聚层",
+   "biz_desc": "港城大道至蓬莱48芯"
+  },
+  {
+   "name": "石黄线",
+   "district": "龙口市",
+   "level": "橙",
+   "status": "已完工",
+   "road": "石黄线",
+   "start": [
+    120.446926,
+    37.58425
+   ],
+   "end": [
+    120.389691,
+    37.580114
+   ],
+   "length_km": 4,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.4.25",
+   "cable_count": null,
+   "biz_level": "汇聚层",
+   "biz_desc": "东周家至南山48芯，麻家综合业务区，超千户"
+  },
+  {
+   "name": "港城西大街锦绣新天地北出局",
+   "district": "芝罘区",
+   "level": "橙",
+   "status": "施工中",
+   "road": "港城西大街锦绣新天地北出局",
+   "start": null,
+   "end": null,
+   "length_km": 0.5,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.5.2",
+   "cable_count": 12,
+   "biz_level": "汇聚层",
+   "biz_desc": "锦绣新天地北至黄务48芯，锦绣新天地北一港城华府光交144B，锦绣新天地北一锦诱新天地光交。"
+  },
+  {
+   "name": "青年南路下曲家",
+   "district": "芝罘区",
+   "level": "橙",
+   "status": "暂停施工",
+   "road": "青年南路下曲家",
+   "start": null,
+   "end": null,
+   "length_km": 0.1,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.5.9",
+   "cable_count": 15,
+   "biz_level": "汇聚层",
+   "biz_desc": "黄务至傅家48B，创进至青年南路魁玉路光交，蓁山花园至青年南路魁玉路光交综合业务区，多旁口"
+  },
+  {
+   "name": "永达街奇泉路路口",
+   "district": "福山区",
+   "level": "橙",
+   "status": "暂停施工",
+   "road": "永达街奇泉路路口",
+   "start": [
+    121.230019,
+    37.521638
+   ],
+   "end": [
+    121.229914,
+    37.522225
+   ],
+   "length_km": 0.15,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.5.13",
+   "cable_count": 10,
+   "biz_level": "骨干汇聚",
+   "biz_desc": "永安街-二枢纽骨干汇聚备用"
+  },
+  {
+   "name": "黄务机房东出局",
+   "district": "芝罘区",
+   "level": "橙",
+   "status": "施工中",
+   "road": "黄务机房东出局",
+   "start": null,
+   "end": null,
+   "length_km": 0.1,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.5.14",
+   "cable_count": 30,
+   "biz_level": "汇聚层",
+   "biz_desc": "黄务一黄家疃48B，黄务一解放路48B，黄务一创进，96B汇聚，黄务一隆中路光交综合业务区多旁□，超千户"
+  },
+  {
+   "name": "海兴路（新兴街至东村河）",
+   "district": "海阳市",
+   "level": "橙",
+   "status": "暂停施工",
+   "road": "海兴路（新兴街至东村河）",
+   "start": [
+    121.191777,
+    36.791717
+   ],
+   "end": [
+    121.185179,
+    36.791503
+   ],
+   "length_km": 4,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.5.19",
+   "cable_count": null,
+   "biz_level": "接入层",
+   "biz_desc": "海兴路光交至海园路榆山街路口光交"
+  },
+  {
+   "name": "幸福南路夹河桥东长输热力施工",
+   "district": "芝罘区",
+   "level": "橙",
+   "status": "暂停施工",
+   "road": "幸福南路夹河桥东长输热力施工",
+   "start": [
+    121.29653066,
+    37.55746742
+   ],
+   "end": [
+    121.29619727,
+    37.55586769
+   ],
+   "length_km": 0.2,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.5.20",
+   "cable_count": 12,
+   "biz_level": "干线",
+   "biz_desc": "创进-二枢纽骨干汇聚、传进-泰山路骨干汇聚、新大楼-二枢纽骨干汇聚"
+  },
+  {
+   "name": "红旗路夹河桥东长输热力施工",
+   "district": "芝罘区",
+   "level": "橙",
+   "status": "暂停施工",
+   "road": "红旗路夹河桥东长输热力施工",
+   "start": [
+    121.29535793,
+    37.54716352
+   ],
+   "end": [
+    121.29526106,
+    37.54590421
+   ],
+   "length_km": null,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.5.20",
+   "cable_count": 1,
+   "biz_level": "骨干汇聚",
+   "biz_desc": "创进-栖霞波分、解放路-二枢纽波分"
+  },
+  {
+   "name": "幸福北路化工路长输热力施工",
+   "district": "芝罘区",
+   "level": "橙",
+   "status": "暂停施工",
+   "road": "幸福北路化工路长输热力施工",
+   "start": [
+    121.32021951,
+    37.57502813
+   ],
+   "end": [
+    121.32013334,
+    37.57382034
+   ],
+   "length_km": 0.3,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.5.20",
+   "cable_count": 8,
+   "biz_level": "汇聚",
+   "biz_desc": "幸福大厦-芝罘岛PTN、幸福北路OLT多Pon口"
+  },
+  {
+   "name": "大东夼快速路施工",
+   "district": "芝罘区",
+   "level": "橙",
+   "status": "施工中",
+   "road": "大东夼快速路施工",
+   "start": [
+    121.38076723,
+    37.50791213
+   ],
+   "end": [
+    121.37087081,
+    37.50988345
+   ],
+   "length_km": 0.6,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.5.20",
+   "cable_count": 10,
+   "biz_level": "多基站、多pon口",
+   "biz_desc": "大东夼cran等基站、阳光上城、通世隧道南、上尧办事处多pon 口"
+  },
+  {
+   "name": "青年路港城西大街长输热力施工",
+   "district": "芝罘区",
+   "level": "橙",
+   "status": "施工中",
+   "road": "青年路港城西大街长输热力施工",
+   "start": [
+    121.35133192,
+    37.46679039
+   ],
+   "end": [
+    121.3529879,
+    37.46677629
+   ],
+   "length_km": 0.3,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.5.20",
+   "cable_count": 6,
+   "biz_level": "",
+   "biz_desc": "黄务-杜家疃、黄务多Pon口，"
+  },
+  {
+   "name": "港城西大街东机房出局长输热力施工",
+   "district": "芝罘区",
+   "level": "橙",
+   "status": "暂停施工",
+   "road": "港城西大街东机房出局长输热力施工",
+   "start": [
+    121.36857671,
+    37.4667333
+   ],
+   "end": [
+    121.37352054,
+    37.46667193
+   ],
+   "length_km": 0.4,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.5.20",
+   "cable_count": 6,
+   "biz_level": "多PON口等",
+   "biz_desc": "港城西大街东olt上行、多pon口"
+  },
+  {
+   "name": "莱阳贤友路与阳光城东热力施工",
+   "district": "莱阳市",
+   "level": "橙",
+   "status": "施工中",
+   "road": "莱阳贤友路与阳光城东热力施工",
+   "start": [
+    120.726417,
+    36.956743
+   ],
+   "end": [
+    120.725223,
+    36.957824
+   ],
+   "length_km": 0.5,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.5.20",
+   "cable_count": 15,
+   "biz_level": "汇聚、接入、多PON口",
+   "biz_desc": "影响山水华庭基站，阳光城东拉远多PNO口，超千户"
+  },
+  {
+   "name": "港城西大街大旺路路口",
+   "district": "福山区",
+   "level": "橙",
+   "status": "已完工",
+   "road": "港城西大街大旺路路口",
+   "start": [
+    121.283369,
+    37.476532
+   ],
+   "end": [
+    121.282961,
+    37.476484
+   ],
+   "length_km": 0.06,
+   "jiaodi": "是",
+   "jiaodi_date": "26.5.28",
+   "cable_count": 10,
+   "biz_level": "骨干汇聚",
+   "biz_desc": "创进-栖霞、福山骨干汇聚，新大楼-二枢纽骨干汇聚"
+  },
+  {
+   "name": "通世南路蓁山路至通世南路隧道口",
+   "district": "芝罘区",
+   "level": "橙",
+   "status": "施工中",
+   "road": "通世南路蓁山路至通世南路隧道口",
+   "start": [
+    121.362733,
+    37.500605
+   ],
+   "end": null,
+   "length_km": 0.6,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.5.30",
+   "cable_count": 15,
+   "biz_level": "汇聚层接入多旁口",
+   "biz_desc": "通世隧道南一大海洋，通世隧道南一解放路，0LT上联，多旁口超千户"
+  },
+  {
+   "name": "海政路105号靠近金海螺商业广场(海阳步行街)",
+   "district": "海阳市",
+   "level": "橙",
+   "status": "已完工",
+   "road": "海政路105号靠近金海螺商业广场(海阳步行街)",
+   "start": [
+    121.160735,
+    36.777114
+   ],
+   "end": [
+    121.160318,
+    36.777086
+   ],
+   "length_km": 0.2,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.6.2",
+   "cable_count": 10,
+   "biz_level": "汇聚、接入、多PON口",
+   "biz_desc": "凯利府邸至海政路路口光交8，凯利府邸至晓龙名都"
+  },
+  {
+   "name": "福山区东泽路",
+   "district": "福山区",
+   "level": "橙",
+   "status": "暂停施工",
+   "road": "福山区东泽路",
+   "start": [
+    121.08252,
+    37.504122
+   ],
+   "end": [
+    121.085645,
+    37.511192
+   ],
+   "length_km": 0.85,
+   "jiaodi": "是",
+   "jiaodi_date": "26.6.11",
+   "cable_count": 8,
+   "biz_level": "家宽 多PON口",
+   "biz_desc": "汇聚，实通-中桥SPN，波分"
+  },
+  {
+   "name": "开发区北京南路",
+   "district": "开发区",
+   "level": "橙",
+   "status": "已完工",
+   "road": "开发区北京南路",
+   "start": null,
+   "end": null,
+   "length_km": 0.01,
+   "jiaodi": "是",
+   "jiaodi_date": "26.6.14",
+   "cable_count": 30,
+   "biz_level": "汇聚",
+   "biz_desc": "汇聚，二枢纽至蓬莱"
+  },
+  {
+   "name": "港城大道",
+   "district": "龙口市",
+   "level": "橙",
+   "status": "暂停施工",
+   "road": "港城大道",
+   "start": [
+    120.515864,
+    37.640257
+   ],
+   "end": [
+    120.533541,
+    37.641282
+   ],
+   "length_km": 1.6,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.6.19",
+   "cable_count": 35,
+   "biz_level": "汇聚层",
+   "biz_desc": "市到县龙口-蓬莱，县乡黄城-振兴路、黄城-于高、黄城-城后冯家、黄城-南山、黄城-兰高等汇聚；港城大道OLT西出局下挂PON口接近万户"
+  },
+  {
+   "name": "山东省烟台市海阳市文山街 253号生产村英雄山东",
+   "district": "海阳市",
+   "level": "黄",
+   "status": "暂停施工",
+   "road": "山东省烟台市海阳市文山街 253号生产村英雄山东",
+   "start": [
+    121.17208,
+    36.775414
+   ],
+   "end": [
+    121.176223,
+    36.774409
+   ],
+   "length_km": 0.2,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.6.21",
+   "cable_count": 2,
+   "biz_level": "多PON口",
+   "biz_desc": "李家村机房-海兴路/GJ256，温州商贸城至新元谊和居，光交43至光交477"
+  },
+  {
+   "name": "奇山路",
+   "district": "开发区",
+   "level": "红",
+   "status": "施工中",
+   "road": "奇山路",
+   "start": null,
+   "end": null,
+   "length_km": 0.6,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.6.25",
+   "cable_count": 4,
+   "biz_level": "干线/多PON口/汇聚",
+   "biz_desc": "干线:二枢纽-创进/汇聚:二枢纽-黄河路/二枢纽-北京中路/北屯传输机房多PPN口"
+  },
+  {
+   "name": "幸福南路夹河东侧",
+   "district": "芝罘区",
+   "level": "红",
+   "status": "施工中",
+   "road": "幸福南路夹河东侧",
+   "start": [
+    121.291982,
+    37.555833
+   ],
+   "end": [
+    121.292124,
+    37.555836
+   ],
+   "length_km": 0.1,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.6.28",
+   "cable_count": 6,
+   "biz_level": "汇聚层，干线",
+   "biz_desc": "创进一二杻纽"
+  },
+  {
+   "name": "留格汇聚光交101",
+   "district": "海阳市",
+   "level": "橙",
+   "status": "暂停施工",
+   "road": "留格汇聚光交101",
+   "start": [
+    121.314175,
+    36.78387
+   ],
+   "end": [
+    121.314215,
+    36.783869
+   ],
+   "length_km": 0.2,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.6.28",
+   "cable_count": 8,
+   "biz_level": "多PON口/汇聚",
+   "biz_desc": "留格汇聚至核电汇聚/留格汇聚至留格汇聚对面光交101"
+  },
+  {
+   "name": "二马路虹□大厦前",
+   "district": "芝罘区",
+   "level": "橙",
+   "status": "已完工",
+   "road": "二马路虹□大厦前",
+   "start": [
+    121.406441,
+    37.536309
+   ],
+   "end": null,
+   "length_km": 1.5,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.7.3",
+   "cable_count": 12,
+   "biz_level": "汇聚层，多旁口",
+   "biz_desc": "解放路至京华眼科汇聚/解放路综合业多区超千户"
+  },
+  {
+   "name": "钟楼南路西侧",
+   "district": "蓬莱区",
+   "level": "橙",
+   "status": "已完工",
+   "road": "钟楼南路西侧",
+   "start": [
+    120.7496384681,
+    37.7970264161
+   ],
+   "end": [
+    120.7493991049,
+    37.7962710859
+   ],
+   "length_km": null,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.7.7",
+   "cable_count": 18,
+   "biz_level": "汇聚，多pon口",
+   "biz_desc": "蓬莱-龙口西环一，西环二"
+  },
+  {
+   "name": "海东路垛山街路口",
+   "district": "海阳市",
+   "level": "黄",
+   "status": "暂停施工",
+   "road": "海东路垛山街路口",
+   "start": [
+    121.176142,
+    36.7740995
+   ],
+   "end": [
+    121.176198,
+    36.7751754
+   ],
+   "length_km": 0.2,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.7.10",
+   "cable_count": 6,
+   "biz_level": "多PON口",
+   "biz_desc": "海政路至光交447/温州街至垛山街理城嘉苑"
+  },
+  {
+   "name": "裕龙岛裕龙大道",
+   "district": "龙口市",
+   "level": "橙",
+   "status": "施工中",
+   "road": "裕龙岛裕龙大道",
+   "start": [
+    120.285456,
+    37.581894
+   ],
+   "end": [
+    120.285759,
+    37.581811
+   ],
+   "length_km": 2,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.8.2",
+   "cable_count": 9,
+   "biz_level": "汇聚层，多pon口",
+   "biz_desc": "西海岸服务区到2.3号岛，中心控制室业务"
+  },
+  {
+   "name": "长江路台北路",
+   "district": "开发区",
+   "level": "橙",
+   "status": "施工中",
+   "road": "长江路台北路",
+   "start": [
+    121.113753,
+    37.567251
+   ],
+   "end": null,
+   "length_km": 0.02,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.8.6",
+   "cable_count": 3,
+   "biz_level": "古现-八角北堡",
+   "biz_desc": "古现-水星食品时钟/玲珑轮胎裸光纤"
+  },
+  {
+   "name": "海政路口北至海阳路口南",
+   "district": "海阳市",
+   "level": "黄",
+   "status": "暂停施工",
+   "road": "海政路口北至海阳路口南",
+   "start": [
+    121.162021446,
+    36.7769776171
+   ],
+   "end": [
+    121.16204649,
+    36.7787111
+   ],
+   "length_km": 0.2,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.8.14",
+   "cable_count": 8,
+   "biz_level": "多PON口/汇聚",
+   "biz_desc": "朱吴至温州街/光交257至海阳园西村东村倪家"
+  },
+  {
+   "name": "东凤大道高速路口至南京路口",
+   "district": "海阳市",
+   "level": "橙",
+   "status": "暂停施工",
+   "road": "东凤大道高速路口至南京路口",
+   "start": [
+    121.200527,
+    36.755559
+   ],
+   "end": [
+    121.208462,
+    36.7396668
+   ],
+   "length_km": 0.2,
+   "jiaodi": "是",
+   "jiaodi_date": "2026.8.24",
+   "cable_count": 12,
+   "biz_level": "多PON口/汇聚",
+   "biz_desc": "东凤大道至温州街/东凤大道至凤城/东凤大道至海政路/龙怡花园至邓家/凤城西迟格庄共享联通至东凤大道"
+  }
+ ]
+}

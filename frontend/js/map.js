@@ -1,5 +1,5 @@
 // 烟台区县地图 — Three.js 3D 版本（替换 ECharts-GL）
-import { YantaiMap3D } from './three-map.js';
+import { YantaiMap3D } from './three-map.js?v=20260908m';
 
 var threeMap = null;
 

@@ -912,6 +912,249 @@ class YantaiMap3D {
     this.mapGroup.add(this.barLabelGroup);
   }
 
+  // ==================== 施工图柱状图（对齐 _createBars，完全隔离实例） ====================
+  // 数据源 = window.ENGINEERING_DATA.district_ranking（施工数据，用户手动提供）；
+  // 对象全部 _work 前缀，不触碰 barGroup/_warningPinGroup 等现有图层；
+  // 施工柱不参与 3D 射线点击（点区县面触发 _switchDistrict → 跳 2D 道路线）
+  _createWorkBars() {
+    this._workBarGroup = new THREE.Group();
+    this._workBarLabelGroup = new THREE.Group();
+    this._workAllBarLabels = [];
+    this._workAllBars = [];
+    this._workAllBarMaterials = [];
+
+    const data = window.ENGINEERING_DATA || {};
+    const ranking = data.district_ranking || [];
+
+    const factor = 0.55;
+    const maxHeight = 4.0 * factor;
+    const barSize = 0.1 * factor;
+    const minBarH = maxHeight * 0.12;
+    const maxVal = ranking.length > 0 ? Math.max(...ranking.map(r => r.value)) : 1;
+
+    ranking.forEach((item, idx) => {
+      let coord = this.districtCoords.find(d => d.name === item.name);
+      if (!coord || !coord.centroid || coord.centroid.length < 2) {
+        const dc = window.DISTRICT_CENTERS && window.DISTRICT_CENTERS[item.name];
+        if (!dc || dc.length < 2) return;
+        coord = { name: item.name, centroid: dc };
+      }
+
+      const [bx, by] = this.geoProject(coord.centroid);
+      const geoHeight = Math.max(minBarH, maxHeight * Math.pow(item.value / maxVal, 0.6));
+
+      // 柱体材质 — 施工主题色（青蓝色渐变，与柱状图黄色区分）
+      const barMat = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 1,
+        depthTest: false,
+        fog: false,
+      });
+      new GradientShader(barMat, {
+        uColor1: 0x2dd4bf,
+        uColor2: 0x99f6e4,
+        size: geoHeight,
+        dir: 'y',
+      });
+
+      const geo = new THREE.BoxGeometry(barSize, barSize, geoHeight);
+      geo.translate(0, 0, geoHeight / 2);
+      const box = new THREE.Mesh(geo, barMat);
+      box.renderOrder = 5;
+      box.position.set(bx, -by, this.depth + 0.45);
+      box.userData = { name: item.name, isWorkBar: true };
+      this._workAllBars.push(box);
+      this._workAllBarMaterials.push(barMat);
+      this._workBarGroup.add(box);
+
+      // 光辉 (huiguang) — 3 个交叉面
+      if (this.textures.huiguang) {
+        const hgColor = 0x5eead4;
+        const hgGeo = new THREE.PlaneGeometry(0.35, geoHeight);
+        hgGeo.translate(0, geoHeight / 2, 0);
+        const hgTex = this.textures.huiguang;
+        hgTex.colorSpace = THREE.SRGBColorSpace;
+        hgTex.wrapS = THREE.RepeatWrapping;
+        hgTex.wrapT = THREE.RepeatWrapping;
+        const hgMat = new THREE.MeshBasicMaterial({
+          color: hgColor,
+          map: hgTex,
+          transparent: true,
+          opacity: 0.4,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+          blending: THREE.AdditiveBlending,
+        });
+        const hg1 = new THREE.Mesh(hgGeo, hgMat);
+        hg1.renderOrder = 10;
+        hg1.rotateX(Math.PI / 2);
+        const hg2 = hg1.clone();
+        hg2.rotateY((Math.PI / 180) * 60);
+        const hg3 = hg1.clone();
+        hg3.rotateY((Math.PI / 180) * 120);
+        box.add(hg1);
+        box.add(hg2);
+        box.add(hg3);
+      }
+
+      // 底部旋转光环
+      const isLaiShan = item.name === '莱山区';
+      const quanSize = isLaiShan ? 0.7 : 0.35;
+      const quans = this._createQuan(new THREE.Vector3(0, 0, 0), quanSize);
+      if (quans && quans.length) {
+        box.add(...quans);
+        if (!this._workAllQuans) this._workAllQuans = [];
+        this._workAllQuans.push(...quans);
+      }
+
+      // 柱顶数量标签：Canvas 纹理 Sprite —— 观感对齐柱状图 CSS3D bar-label：
+      // 半透明胶囊底 + 大号发光数字/小单位（左）+ 区县名/拼音竖排（右）
+      // 不用 CSS3D：work 标签切换时才创建，CSS3DRenderer 视锥/深度问题反复不渲染；Sprite 走主管线 100% 可靠
+      {
+        // 与柱状图 CSS3D bar-label 逐像素同尺寸（230x58px → sprite 2.3x0.58 world，px 即 world×0.01）：
+        // wrap padding 0 18、gap 14、数字30px 发光、单位12px、name24px、en12px —— 字号完全一致
+        const W = 230, H = 58, S = 2;   // 物理 2x 抗锯齿，逻辑尺寸 = CSS px
+        const cv = document.createElement('canvas');
+        cv.width = W * S; cv.height = H * S;
+        const ctx = cv.getContext('2d');
+        ctx.scale(S, S);
+        ctx.clearRect(0, 0, W, H);
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'left';
+        const pinYinMap = {
+          '芝罘区':'ZHIFU','莱阳市':'LAIYANG','龙口市':'LONGKOU',
+          '牟平区':'MUPING','莱州市':'LAIZHOU','海阳市':'HAIYANG',
+          '莱山区':'LAISHAN','福山区':'FUSHAN','蓬莱区':'PENGLAI',
+          '招远市':'ZHAOYUAN','栖霞市':'QIXIA','烟台开发区':'YEDA',
+          '烟台高新区':'HI-TECH','长岛综试区':'CHANGDAO',
+        };
+        const en = pinYinMap[item.name] || item.name;
+        // 胶囊底：圆角 30 30 30 0（右下直角，同 .bar-label-wrap）
+        const rr = 30;
+        ctx.beginPath();
+        ctx.moveTo(rr, 0); ctx.lineTo(W - rr, 0); ctx.arcTo(W, 0, W, rr, rr);
+        ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.lineTo(0, rr);
+        ctx.arcTo(0, 0, rr, 0, rr); ctx.closePath();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';   // 与 .bar-label-wrap 背景透明度一致
+        ctx.fill();
+        // 左：数字 30px bold 发光（同 .bar-label-val）
+        const numTxt = String(item.value);
+        ctx.font = 'bold 30px Arial';
+        const wNum = ctx.measureText(numTxt).width;
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = '#7efbf6';
+        ctx.shadowBlur = 6;
+        ctx.fillText(numTxt, 18, 29);   // wrap padding-left 18
+        ctx.shadowBlur = 0;
+        // 单位 12px 白50%（同 .bar-label-unit，padding-left 4）
+        ctx.font = '12px 微软雅黑';
+        ctx.fillStyle = 'rgba(255,255,255,.5)';
+        ctx.fillText('条道路', 18 + wNum + 4, 30);
+        // 右：区县名 24px bold + 拼音 12px 竖排（gap 14，同 .bar-label-info）
+        const nameX = 18 + wNum + 4 + ctx.measureText('条道路').width + 14;
+        ctx.font = 'bold 24px 微软雅黑';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(item.name, nameX, 22);
+        ctx.font = '12px Arial';
+        ctx.fillStyle = 'rgba(255,255,255,.5)';
+        ctx.fillText(en, nameX, 40);
+        const tex = new THREE.CanvasTexture(cv);
+        tex.minFilter = THREE.LinearFilter;
+        const spr = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: tex, transparent: true, depthTest: false, fog: false,
+        }));
+        // 世界尺寸与 CSS3D bar 标签一致（230x58px @scale0.01 → 2.3x0.58 world）
+        spr.scale.set(2.3, 0.58, 1);
+        spr.position.set(bx, -by, this.depth + 0.65 + geoHeight + 0.32);
+        spr.renderOrder = 12;
+        this._workBarGroup.add(spr);
+        this._workAllBarLabels.push({
+          spr: spr,   // 供生长动画做 z 升起 + 淡入（与柱状图标签随柱顶同步一致）
+          show: () => { spr.visible = true; },
+          hide: () => { spr.visible = false; },
+        });
+      }
+    });
+
+    this.mapGroup.add(this._workBarGroup);
+    this.mapGroup.add(this._workBarLabelGroup);
+    // 施工柱状图默认隐藏，setMapMode('work') 时显示
+    this._workBarGroup.visible = false;
+    this._workBarLabelGroup.visible = false;
+    this._workAllBarLabels.forEach(l => { if (l && l.hide) l.hide(); });
+  }
+
+  // 施工柱生长动画（与柱状图一致：柱底 scale.z 0.01→1 生长 + 标签随柱顶同步升起、淡入；
+  // 每次切入施工图模式播放）
+  _growWorkBars() {
+    const bars = this._workAllBars || [];
+    if (!bars.length) return;
+    const labels = this._workAllBarLabels || [];
+    const baseZ = this.depth + 0.65;
+    bars.forEach((box, i) => {
+      const h = (box.geometry && box.geometry.parameters && box.geometry.parameters.depth) || 1;
+      const spr = labels[i] && labels[i].spr;
+      const delay = i * 0.03;
+      box.scale.z = 0.01;
+      if (typeof gsap !== 'undefined' && gsap.to) {
+        gsap.killTweensOf(box.scale);
+        gsap.to(box.scale, { z: 1, duration: 0.55, ease: 'power2.out', delay });
+        if (spr) {
+          // 标签从柱脚处随柱顶升起（同柱状图 updateBars 的 label tween）+ 延迟淡入
+          gsap.killTweensOf(spr.position);
+          gsap.fromTo(spr.position,
+            { z: baseZ + 0.1 },
+            { z: baseZ + h + 0.32, duration: 0.55, ease: 'power2.out', delay });
+          gsap.killTweensOf(spr.material);
+          gsap.fromTo(spr.material, { opacity: 0 }, { opacity: 1, duration: 0.45, delay: delay + 0.12 });
+        }
+      } else {
+        box.scale.z = 1;
+      }
+    });
+  }
+
+  // 施工柱按当前周期（本周/本月/今年）重建：区县道路数 = 交底日期在该周期内的道路数
+  // （ENGINEERING_DATA 由 window.buildWorkDistrictRanking 按周期重算 → 重建柱体/标签）
+  _applyWorkPeriod() {
+    const period = (window.getMqPeriod ? window.getMqPeriod() : null) || this._pinPeriod || 'week';
+    let ranking = [];
+    if (window.buildWorkDistrictRanking) {
+      try { ranking = window.buildWorkDistrictRanking(period); } catch (e) { ranking = []; }
+    }
+    // 真实周期过滤：本周/本月无交底记录 → 空柱（不再兜底全量 —— "点本周仍显示柱状图" bug）
+    this._workEmpty = !ranking.length;
+    const eng = window.ENGINEERING_DATA || {};
+    // 移除旧柱组（柱/标签/quan 一并丢弃；材质交给 GC——数量小，重建成本远低于增量更新复杂度）
+    if (this._workBarGroup) {
+      if (this._workBarGroup.parent) this._workBarGroup.parent.remove(this._workBarGroup);
+      if (this._workBarLabelGroup && this._workBarLabelGroup.parent) {
+        this._workBarLabelGroup.parent.remove(this._workBarLabelGroup);
+      }
+      this._workBarGroup = null;
+      this._workBarLabelGroup = null;
+      this._workAllBars = [];
+      this._workAllBarLabels = [];
+      this._workAllBarMaterials = [];
+      this._workAllQuans = null;
+    }
+    if (!this._yantaiGeojson) return;   // 地图未就绪：切到 work 时会再建
+    // 临时替换 ENGINEERING_DATA.district_ranking → _createWorkBars 按新 ranking 创建（不动原 JSON）
+    const old = eng.district_ranking;
+    eng.district_ranking = ranking;
+    try { this._createWorkBars(); } finally { eng.district_ranking = old; }
+  }
+  // 施工柱重建后统一显示 + 生长动画（setMapMode('work') 与周期切换 setPinPeriod 共用；
+  // 调用前必须已 _applyWorkPeriod() 重建 —— 否则刚建的组是 visible=false → "不显示数据"）
+  _displayWorkBars() {
+    if (!this._workBarGroup) return;
+    this._workBarGroup.visible = true;
+    this._workBarLabelGroup.visible = true;
+    this._workAllBarLabels.forEach(l => { if (l && l.show) l.show(); });
+    this._growWorkBars();   // 柱底生长 + 标签升起淡入（每次进入/周期切换都播放）
+  }
+
   // 周期切换：更新现有柱（柱高/柱顶数字/可见性），不重建 CSS3D 标签——
   // 重建会触发 CSS3DRenderer 视锥剔除间歇性把标签置 hidden（"标签有时没有有时出现"）
   updateBars(ranking) {
@@ -1516,6 +1759,13 @@ class YantaiMap3D {
    // _foldDuplicatePins 已统一叠加 颜色+周期 过滤，这里仅设置周期并刷新
    setPinPeriod(period) {
      this._pinPeriod = period || null;
+     // 施工图模式：施工柱按新周期重建（区县道路数柱高/标签随 本周/本月/今年 变化）
+     // 注意：重建后必须重新显示 + 生长动画（_createWorkBars 默认 visible=false，
+     // 只重建不显示 → "3D 施工图不显示数据" bug）
+     if (this._mapMode === 'work' && this._workBarGroup) {
+       this._applyWorkPeriod();
+       this._displayWorkBars();
+     }
      if (!this._warningPinGroup) return;
      if (this._districtMode) {
        // 下钻态：完整重算区县内图钉（周期扩张/收缩都正确，而非单调 AND 只能收缩）
@@ -1910,8 +2160,15 @@ class YantaiMap3D {
       window.GaodeMap2D.onEnter = () => this._captureFor2D();
       window.GaodeMap2D.onExit = () => this._restoreFrom2D();
     }
-    // 底部模式按钮（index.html .bottom-menu-item：柱状图/预警图）
-    const modeNames = ['bar', 'warning'];
+    // 施工图 2D（WorkMap2D，高德 JS API）同样挂钩子：
+    // 进入时暂停 3D 渲染循环 + 隐藏 3D canvas（否则 AMap 拖动时 3D 仍每帧渲染 → 卡顿），
+    // 返回时恢复 3D（相机/下钻状态）——与 GaodeMap2D 完全对称
+    if (window.WorkMap2D) {
+      window.WorkMap2D.onEnter = () => this._captureFor2D();
+      window.WorkMap2D.onExit = () => this._restoreFrom2D();
+    }
+    // 底部模式按钮（index.html .bottom-menu-item：柱状图/预警图/施工图）
+    const modeNames = ['bar', 'warning', 'work'];
     document.querySelectorAll('.bottom-menu-item').forEach((btn, i) => {
       if (!modeNames[i]) return;
       btn.addEventListener('click', () => {
@@ -1946,8 +2203,12 @@ class YantaiMap3D {
       this._drillBackBtn.style.display = 'block';   // 常驻显示（用户要求一直在导航栏）
       this._drillBackBtn.onclick = () => {
         // 2D 打开时先退出（onExit 恢复 3D 相机到下钻区县），再返回全市
+        // 预警图 2D（GaodeMap2D）与施工图 2D（WorkMap2D）都要收，否则地图残留盖住 3D
         if (window.GaodeMap2D && window.GaodeMap2D.isVisible && window.GaodeMap2D.isVisible()) {
           window.GaodeMap2D.hide();
+        }
+        if (window.WorkMap2D && window.WorkMap2D.isVisible && window.WorkMap2D.isVisible()) {
+          window.WorkMap2D.hide();
         }
         this._switchCity();
       };
@@ -1980,13 +2241,19 @@ class YantaiMap3D {
   setMapMode(mode) {
     if (this._mapMode === mode) return;
     this._mapMode = mode;
-    // 按钮 active 样式（热力图按钮已移除）
-    const names = ['bar', 'warning'];
+    // 左栏面板按模式切换：work=施工数据；bar/warning=预警数据（js.js onMapModeChange）
+    if (typeof window !== 'undefined' && window.onMapModeChange) {
+      try { window.onMapModeChange(mode); } catch (e) { console.error('mode hook:', e); }
+    }
+    // 按钮 active 样式（热力图按钮已移除；施工图=work 第三个按钮）
+    const names = ['bar', 'warning', 'work'];
     document.querySelectorAll('.bottom-menu-item').forEach((b, i) => {
       b.classList.toggle('is-active', names[i] === mode);
     });
-    // 柱状图模式：柱+标签 + 入场动画；热力图：高德瓦片街道底图；预警图：3D 图钉干净地图
+    // 柱状图模式：柱+标签 + 入场动画；热力图：高德瓦片街道底图；预警图：3D 图钉干净地图；
+    // 施工图（work）：3D 视角 + 独立施工柱状图（干净地图，下钻直接跳 2D 道路线）
     const isWarning = mode === 'warning';
+    const isWork = mode === 'work';
     // 预警图模式显示 3D 图钉（隐藏 Sprite 散点 + 莱山飞线/聚焦光圈）；其他模式反之
     if (isWarning && !this._warningPinGroup && this._yantaiGeojson) this._addWarningPins();
     if (this._warningPinGroup) {
@@ -2004,14 +2271,14 @@ class YantaiMap3D {
         this._foldDuplicatePins();
       }
     }
-    // 莱山飞线/聚焦光圈：预警图（干净地图）隐藏
-    if (this.flyLine) this.flyLine.instance.visible = !isWarning;
-    if (this.focus) this.focus.visible = !isWarning;
-    // 坐标类文字标签：区县名标签预警图隐藏；"烟台市"城市标签保留显示
-    if (this._districtLabelGroup) this._districtLabelGroup.visible = !isWarning;
+    // 莱山飞线/聚焦光圈：预警图/施工图（干净地图）隐藏
+    if (this.flyLine) this.flyLine.instance.visible = !isWarning && !isWork;
+    if (this.focus) this.focus.visible = !isWarning && !isWork;
+    // 坐标类文字标签：区县名标签预警图/施工图隐藏；"烟台市"城市标签保留显示
+    if (this._districtLabelGroup) this._districtLabelGroup.visible = !isWarning && !isWork;
     if (this._focusLabel) this._focusLabel.show();
-    if (this._districtNameLabel) { if (isWarning) this._districtNameLabel.hide(); }
-    this.scatterItems.forEach(g => { g.visible = !isWarning; });
+    if (this._districtNameLabel) { if (isWarning || isWork) this._districtNameLabel.hide(); }
+    this.scatterItems.forEach(g => { g.visible = !isWarning && !isWork; });
     // 仅点击"预警图"按钮时图钉从上往下淡入；已下钻则直接显示（不与下钻定位 tween 打架）
     if (isWarning && !this._switching) {
       if (this._pinTimer) clearTimeout(this._pinTimer);
@@ -2020,6 +2287,10 @@ class YantaiMap3D {
       }, 400);
     }
     if (mode === 'bar') {
+      // 切回柱状图：隐藏施工图独立柱状图（隔离，不销毁；未构建过则跳过）
+      if (this._workBarGroup) this._workBarGroup.visible = false;
+      if (this._workBarLabelGroup) this._workBarLabelGroup.visible = false;
+      if (this._workAllBarLabels) this._workAllBarLabels.forEach(l => { if (l && l.hide) l.hide(); });
       if (this.barGroup) this.barGroup.visible = true;
       if (this.barLabelGroup) this.barLabelGroup.visible = true;
       this.allBarLabels.forEach(l => { if (l && l.show) l.show(); });
@@ -2040,7 +2311,26 @@ class YantaiMap3D {
       // 热力图图层已移除：heat 模式不再加载街道底图（按钮已删，此分支为防御）
       this._removeHeatLayer();
       this._stopWindowAutoRefresh();
-} else {  // warning
+    } else if (mode === 'work') {
+      // 施工图模式：3D 视角 + 独立施工柱状图（ENGINEERING_DATA 数据，与柱状图完全隔离）
+      // 从下钻态切到施工图：返回全市（work 模式点击区县 = 跳 2D，3D 需保持全市可点；
+      // 否则 _districtMode=true 会让 _switchDistrict 直接 return，2D 打不开）
+      if (this._districtMode && !this._switching) this._switchCity();
+      // 隐藏原柱状图/图钉（只设 visible，不销毁）
+      if (this.barGroup) this.barGroup.visible = false;
+      if (this.barLabelGroup) this.barLabelGroup.visible = false;
+      this.allBarLabels.forEach(l => { if (l && l.hide) l.hide(); });
+      if (this._warningPinGroup) this._warningPinGroup.visible = false;
+      this._removeHeatLayer();
+      this._stopWindowAutoRefresh();
+      // 施工柱按当前周期重建（本周/本月/今年 → 区县道路数柱高/标签）+ 显示 + 生长动画
+      this._applyWorkPeriod();
+      this._displayWorkBars();
+    } else {  // warning
+      // 切到预警图：隐藏施工图柱状图（隔离，未构建过则跳过）
+      if (this._workBarGroup) this._workBarGroup.visible = false;
+      if (this._workBarLabelGroup) this._workBarLabelGroup.visible = false;
+      if (this._workAllBarLabels) this._workAllBarLabels.forEach(l => { if (l && l.hide) l.hide(); });
       // 从下钻态切到预警图：自动返回全市（_flyBackCity onComplete 恢复全部图钉，
       // 避免 _repositionPinsForDrill 只留当前区县图钉）
       if (this._districtMode && !this._switching) this._switchCity();
@@ -2239,6 +2529,36 @@ class YantaiMap3D {
   // ==================== 点击下钻：地图不动，相机飞到区县上方 ====================
   _switchDistrict(name) {
     if (this._districtMode || this._switching) return;
+    // 施工图模式：下钻不进入 3D 区县放大，直接跳转施工图 2D（高德 JS API 独立模块，
+    // features:['bg','road'] 保留街道名无商店 POI；与预警图 Leaflet 完全隔离）
+    if (this._mapMode === 'work') {
+      const c = window.getDistrictCenter ? window.getDistrictCenter(name) : null;
+      if (c && window.WorkMap2D && window.WorkMap2D.show) {
+        this._hideScatterCard();
+        // 注意：getDistrictCenter 返回 [lng, lat]
+        // 先算该区县 geojson 的 bbox（[minLng,minLat,maxLng,maxLat]），
+        // WorkMap2D 用它 setBounds 让区县占屏 ~80%（贴合，不显全景、不锁项目）
+        let dbbox = null;
+        const feat = (this._yantaiGeojson && this._yantaiGeojson.features || []).find(f => f.properties.name === name);
+        if (feat) {
+          let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+          const polys = feat.geometry.type === 'MultiPolygon'
+            ? feat.geometry.coordinates : [feat.geometry.coordinates];
+          polys.forEach(poly => poly.forEach(ring => ring.forEach(p => {
+            if (p[0] < minLng) minLng = p[0];
+            if (p[0] > maxLng) maxLng = p[0];
+            if (p[1] < minLat) minLat = p[1];
+            if (p[1] > maxLat) maxLat = p[1];
+          })));
+          if (minLng < maxLng && minLat < maxLat) dbbox = [minLng, minLat, maxLng, maxLat];
+        }
+        // 2D 全量画所有区县道路（bbox 定位视野）；name 让左栏默认显示该区县道路列表
+        window.WorkMap2D.show(c[0], c[1], 11, dbbox, name);
+      } else {
+        logger.warn('[施工图] WorkMap2D 未就绪，跳过 2D 跳转');
+      }
+      return;
+    }
     const feature = (this._yantaiGeojson.features || []).find(f => f.properties.name === name);
     if (!feature) return;
     this._setHover(null);

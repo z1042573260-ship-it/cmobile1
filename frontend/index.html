@@ -21,8 +21,9 @@
 <script type="text/javascript" src="js/gaode-tiles.js"></script>
 <script type="text/javascript" src="js/district-centers.js"></script>
 <script type="module" src="js/map.js"></script>
-<script type="text/javascript" src="js/js.js"></script>
-<script type="text/javascript" src="js/gaode-map-2d.js"></script>
+<script type="text/javascript" src="js/js.js?v=20260908l"></script>
+<script type="text/javascript" src="js/gaode-map-2d.js?v=20260905"></script>
+<script type="text/javascript" src="js/work-map-2d.js?v=20260908l"></script>
 </head>
 <body>
 	<div class="head">
@@ -129,30 +130,30 @@
 		<!-- 左导航栏 -->
 		<li style="width: 470px; flex: 0 0 470px;margin-top: 30px;">
 		<div class="box">
-			<div class="tit">预警实时统计</div>
+			<div class="tit" id="titStat">预警实时统计</div>
 			<div class="boxnav" style="height: 220px;">
 <div class="yqlist">
             <ul class="clearfix">
-                              
+
                               <li>
                 <div class="yq yq-red" id="statRed" style="color:#ff4444;">--</div>
-                <span >红色预警</span></li>
+                <span id="spanRed">红色预警</span></li>
                               <li>
                 <div class="yq yq-yellow" id="statYellow" style="color:#ffcc00;">--</div>
-                <span>黄色预警</span></li>
+                <span id="spanYellow">黄色预警</span></li>
                               <li>
                 <div class="yq yq-green" id="statDistricts">--</div>
-                <span>项目总数</span></li>
+                <span id="spanGreen">项目总数</span></li>
                             </ul>
           </div>
 			</div>
 			</div>
 			<div class="box">
-			<div class="tit">区县预警数据</div>
+			<div class="tit" id="titDist">区县预警数据</div>
 			<div class="boxnav" style="height: 220px;" id="echart2"></div>
 			</div>
 			<div class="box">
-			<div class="tit">预警时间趋势</div>
+			<div class="tit" id="titTrend">预警时间趋势</div>
 			<div class="boxnav" style="height: 220px;" id="echart3"></div>
 			</div>
 		</li>
@@ -163,13 +164,14 @@
 			<div class="boxnav mapc" style="height: 680px; position: relative">
 			<div class="map" id="map"></div>
 			<div class="map" id="map2d" style="display:none"></div>
+			<div class="map" id="workmap2d" style="display:none"></div>
 			</div>
 			</div>
 		</li>
 		<!-- 右导航栏 -->
 		<li style="width: 470px; flex: 0 0 470px;margin-top: 30px;">
 <div class="box">
-			<div class="tit">抓取日志<span class="tit-live"><span class="live-dot"></span>实时监控中</span></div>
+			<div class="tit">施工日志<span class="tit-live"><span class="live-dot"></span>实时监控中</span></div>
 			<button class="mq-pg-btn mq-all" id="mqAll">全部</button>
 			<div class="boxnav" style="height: 220px; position: relative;">
 				<div class="marquee-wrap">
@@ -185,7 +187,7 @@
 			</div>
 			</div>
 			<div class="box">
-			<div class="tit">项目类型</div>
+			<div class="tit" id="titType">项目类型</div>
 			<div class="boxnav" style="height: 220px;" id="echart5" >
 
 
@@ -193,7 +195,7 @@
 			</div>
 			</div>
 		<div class="box">
-			<div class="tit">项目阶段分布</div>
+			<div class="tit" id="titStage">项目阶段分布</div>
 			<div class="boxnav" style="height: 220px;" id="echart6">
 
 
@@ -259,6 +261,7 @@ var t = null;
   <div class="bottom-menu">
     <div class="bottom-menu-item is-active"><span>柱状图</span></div>
     <div class="bottom-menu-item"><span>预警图</span></div>
+    <div class="bottom-menu-item"><span>施工图</span></div>
   </div>
 
   <!-- 右箭头（镜像） -->
@@ -294,10 +297,8 @@ var t = null;
 // ====== 加载大屏数据 → 更新统计卡片 + 初始化地图和图表 ======
 (function() {
     function updateStats(data) {
-        var s = data.summary;
-        document.getElementById("statRed").textContent = s.red_warning;
-        document.getElementById("statYellow").textContent = s.yellow_warning;
-        document.getElementById("statDistricts").textContent = s.district_count;
+        // 统计三格已施工化（干线/骨干汇聚/其他），由 js.js updateStatPanel 按 ENGINEERING_DATA 驱动；
+        // dashboard summary 不再写入，避免预警数字覆盖施工统计
     }
     function onDataReady(data) {
         // data 为 null 时 getData() 返回完整兜底数据
@@ -335,6 +336,26 @@ var t = null;
     };
     xhr2.onerror = function() { /* 静默 */ };
     xhr2.send();
+    // 加载施工图数据（engineering.json：3D 施工图柱状图 district_ranking + 2D 施工道路线 roads）
+    // 用户手动提供，失败静默（施工图模式显示空柱状图，不影响其他图层）
+    var xhr3 = new XMLHttpRequest();
+    xhr3.open("GET", "data/engineering.json", true);
+    xhr3.onload = function() {
+        if (xhr3.status === 200) {
+            try {
+                var eng = JSON.parse(xhr3.responseText);
+                window.ENGINEERING_DATA = (eng && typeof eng === 'object') ? eng : {};
+            } catch(e) { window.ENGINEERING_DATA = {}; }
+        } else {
+            window.ENGINEERING_DATA = {};
+        }
+        // 施工数据就绪 → 刷新施工统计/区县施工数据/施工交底趋势（可能早于 dashboard 加载完成）
+        try { if (typeof updateStatPanel === 'function') updateStatPanel(); } catch(e) { console.error('work stat:', e); }
+        try { if (typeof initEchart2 === 'function') initEchart2(); } catch(e) { console.error('work echart2:', e); }
+        try { if (typeof initEchart3 === 'function') initEchart3(); } catch(e) { console.error('work echart3:', e); }
+    };
+    xhr3.onerror = function() { window.ENGINEERING_DATA = {}; };
+    xhr3.send();
     function applyWorkbuddyPoints(list) {
         function apply() {
             if (!window.DASHBOARD_DATA || !window.getDistrictCenter) return false;
