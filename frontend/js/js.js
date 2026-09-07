@@ -353,12 +353,29 @@ function initMarquee() {
     var list = dom.querySelector('.marquee-list');
     if (!list) return;
 
-    // 日志 = 施工项目（当前周期施工道路；交底日期倒序）
-    var items = workRoadsOf(_mqPeriod, null).slice().sort(function (a, b) {
-        return String(b.jiaodi_date).localeCompare(String(a.jiaodi_date));
-    });
+    // ===== 日志按地图模式：柱状图/预警图 = 预警抓取日志（原版）；施工图 = 施工日志 =====
+    var isWork = leftPanelMode() === 'work';
+    var items = [];
+    if (isWork) {
+        // 施工日志：当前周期施工道路（交底日期倒序）
+        items = workRoadsOf(_mqPeriod, null).slice().sort(function (a, b) {
+            return String(b.jiaodi_date).localeCompare(String(a.jiaodi_date));
+        });
+    } else {
+        // 预警抓取日志（原版）：map_points 按坐标去重
+        var d = getData();
+        var seen = {};
+        (d.map_points_original || []).concat(d.map_points || []).forEach(function (p) {
+            if (!p || !p.value || p.value.length < 2) return;
+            var key = Math.round(p.value[0] * 1e4) + ',' + Math.round(p.value[1] * 1e4);
+            if (seen[key]) return;
+            seen[key] = true;
+            items.push(p);
+        });
+    }
     if (items.length === 0) {
-        list.innerHTML = '<li><span class="mq-time">--</span>该周期暂无施工项目</li>';
+        list.innerHTML = '<li><span class="mq-time">--</span>' +
+            (isWork ? '该周期暂无施工项目' : '暂无抓取数据') + '</li>';
         return;
     }
 
@@ -366,18 +383,27 @@ function initMarquee() {
     var html = '';
     for (var i = 0; i < items.length; i++) {
         var p = items[i];
-        var lv = String(p.level || '');
         var tagClass = '', tagText = '';
-        if (lv.indexOf('红') >= 0) { tagClass = 'red'; tagText = '干线'; }
-        else if (lv.indexOf('橙') >= 0) { tagClass = 'orange'; tagText = '骨干'; }
-        else { tagClass = 'yellow'; tagText = '其他'; }
-
+        var time = '', status = '';
+        if (isWork) {
+            var lv = String(p.level || '');
+            if (lv.indexOf('红') >= 0) { tagClass = 'red'; tagText = '干线'; }
+            else if (lv.indexOf('橙') >= 0) { tagClass = 'orange'; tagText = '骨干'; }
+            else { tagClass = 'yellow'; tagText = '其他'; }
+            var date = String(p.jiaodi_date || '');
+            time = date.replace(/^\d{4}\./, '').replace(/^\d{2}\./, '') || '—';   // '2026.8.24' → '8.24'
+            status = p.status || '—';
+        } else {
+            var warning = p.warning || '';
+            if (warning === '红色预警') { tagClass = 'red'; tagText = '红警'; }
+            else if (warning === '黄色预警') { tagClass = 'yellow'; tagText = '黄警'; }
+            else { tagClass = 'blue'; tagText = '成功'; }
+            var date2 = p.date || '';
+            time = date2.length > 5 ? date2.substring(date2.length - 5, date2.length) : date2;
+            status = p.stage || '—';
+        }
         var name = String(p.road || p.name || '').substring(0, 26);
         var district = p.district || '';
-        var date = String(p.jiaodi_date || '');
-        // 交底日期 '2026.8.24' → '8.24'
-        var time = date.replace(/^\d{4}\./, '').replace(/^\d{2}\./, '') || '—';
-        var status = p.status || '—';
 
         html += '<li data-idx="' + i + '">';
         html += '<span class="mq-time">' + time + '</span>';
@@ -389,7 +415,7 @@ function initMarquee() {
     }
     list.innerHTML = html;
 
-    // 点击日志条目 → 切施工图 2D 定位该道路（fit + 详情卡）
+    // 点击日志条目：work=切施工 2D 定位该路；预警/柱状图=切 3D 预警图聚焦该图钉（原版）
     if (dom._mqClick) dom.removeEventListener('click', dom._mqClick);
     var clickHandler = function (e) {
         try {
@@ -398,13 +424,33 @@ function initMarquee() {
             var idx = parseInt(li.getAttribute('data-idx'), 10);
             var p = items[idx];
             if (!p) return;
-            // 切到施工图模式并定位该路（WorkMap2D 未显示时自动打开 2D 并等待加载后定位）
-            var m = window.yantaiMapChart;
-            if (m && m._mapMode !== 'work') {
-                try { m.setMapMode('work'); } catch (err) { console.error('mode:', err); }
-            }
-            if (window.WorkMap2D && window.WorkMap2D.focusRoad) {
-                window.WorkMap2D.focusRoad(p);
+            if (leftPanelMode() === 'work') {
+                var m = window.yantaiMapChart;
+                if (m && m._mapMode !== 'work') {
+                    try { m.setMapMode('work'); } catch (err) { console.error('mode:', err); }
+                }
+                if (window.WorkMap2D && window.WorkMap2D.focusRoad) {
+                    window.WorkMap2D.focusRoad(p);
+                }
+            } else {
+                // 原版预警：点击时用当前 map_points 重匹配（前缀匹配，容忍名称截断/数据刷新差异）
+                var cur = (window.DASHBOARD_DATA && window.DASHBOARD_DATA.map_points) || [];
+                var pn0 = String(p.name || '').trim();
+                for (var k = 0; k < cur.length; k++) {
+                    var cn = cur[k] && String(cur[k].name || '').trim();
+                    if (!cn) continue;
+                    if (cn === pn0 || (pn0.length > 4 && cn.indexOf(pn0) === 0) || (pn0.length > 4 && pn0.indexOf(cn) === 0)) {
+                        p = cur[k];
+                        break;
+                    }
+                }
+                if (window.GaodeMap2D && window.GaodeMap2D.isVisible && window.GaodeMap2D.isVisible()) {
+                    window.GaodeMap2D.hide();
+                }
+                var m2 = window.yantaiMapChart;
+                if (m2 && m2.focusWarningPin) {
+                    m2.focusWarningPin({ name: p.name, district: p.district });
+                }
             }
         } catch (err) {
             console.error('[日志点击] 异常:', err);
@@ -478,26 +524,29 @@ function initMarquee() {
     if (prevEl) prevEl.onclick = function () { if (page > 1) jumpToPage(page - 1); };
     if (nextEl) nextEl.onclick = function () { if (page < totalPages) jumpToPage(page + 1); };
     if (allEl) allEl.onclick = function () {
-        // 全部 → 施工图 2D 全区视图 + 中央"全部道路"窗口（含搜索）
-        var m = window.yantaiMapChart;
-        if (m && m._mapMode !== 'work') {
-            try { m.setMapMode('work'); } catch (e) { console.error('mode:', e); }
-        }
-        if (window.GaodeMap2D && window.GaodeMap2D.isVisible && window.GaodeMap2D.isVisible()) {
-            try { window.GaodeMap2D.hide(); } catch (e) {}
-        }
-        if (window.WorkMap2D) {
-            window.WorkMap2D.show(120.78, 37.25, 11);
-            // 等 2D 地图就绪后打开全部道路窗口（首次加载高德 JS API 需数秒 → 轮询）
-            var t0 = Date.now();
-            var waitTimer = setInterval(function () {
-                if (window.WorkMap2D.getMap && window.WorkMap2D.getMap()) {
-                    clearInterval(waitTimer);
-                    try { window.WorkMap2D.showAllRoadsWindow(); } catch (e) { console.error('all win:', e); }
-                } else if (Date.now() - t0 > 12000) {
-                    clearInterval(waitTimer);
-                }
-            }, 300);
+        // work=施工图 2D 全区 + 中央"全部道路"窗口；预警/柱状图=原预警 2D 全部视图
+        if (leftPanelMode() === 'work') {
+            var m = window.yantaiMapChart;
+            if (m && m._mapMode !== 'work') {
+                try { m.setMapMode('work'); } catch (e) { console.error('mode:', e); }
+            }
+            if (window.GaodeMap2D && window.GaodeMap2D.isVisible && window.GaodeMap2D.isVisible()) {
+                try { window.GaodeMap2D.hide(); } catch (e) {}
+            }
+            if (window.WorkMap2D) {
+                window.WorkMap2D.show(120.78, 37.25, 11);
+                var t0 = Date.now();
+                var waitTimer = setInterval(function () {
+                    if (window.WorkMap2D.getMap && window.WorkMap2D.getMap()) {
+                        clearInterval(waitTimer);
+                        try { window.WorkMap2D.showAllRoadsWindow(); } catch (e) { console.error('all win:', e); }
+                    } else if (Date.now() - t0 > 12000) {
+                        clearInterval(waitTimer);
+                    }
+                }, 300);
+            }
+        } else if (window.GaodeMap2D && window.GaodeMap2D.openAllView) {
+            window.GaodeMap2D.openAllView();
         }
     };
 
@@ -858,6 +907,7 @@ function applyLeftPanelText(mode) {
     var t3 = document.getElementById('titTrend');
     var t4 = document.getElementById('titType');
     var t5 = document.getElementById('titStage');
+    var t6 = document.getElementById('titLog');
     var s1 = document.getElementById('spanRed');
     var s2 = document.getElementById('spanYellow');
     var s3 = document.getElementById('spanGreen');
@@ -867,6 +917,9 @@ function applyLeftPanelText(mode) {
     if (t3) t3.textContent = work ? '施工交底趋势' : '预警时间趋势';
     if (t4) t4.textContent = work ? '影响光缆条数' : '项目类型';
     if (t5) t5.textContent = work ? '施工阶段分布' : '项目阶段分布';
+    // 日志标题带"实时监控中"子元素 → 用 innerHTML 保留
+    if (t6) t6.innerHTML = (work ? '施工日志' : '抓取日志') +
+      '<span class="tit-live"><span class="live-dot"></span>实时监控中</span>';
     if (s1) s1.textContent = work ? '干线' : '红色预警';
     if (s2) s2.textContent = work ? '骨干汇聚' : '黄色预警';
     if (s3) s3.textContent = work ? '其他' : '项目总数';
@@ -878,6 +931,9 @@ window.onMapModeChange = function (mode) {
     try { initEchart2(); } catch (e) { console.error('mode e2:', e); }
     try { initEchart3(); } catch (e) { console.error('mode e3:', e); }
     try { updateStatPanel(); } catch (e) { console.error('mode stat:', e); }
+    try { initEchart5(); } catch (e) { console.error('mode e5:', e); }
+    try { initEchart6(); } catch (e) { console.error('mode e6:', e); }
+    try { initMarquee(); } catch (e) { console.error('mode marquee:', e); }   // 日志按模式切换（抓取/施工）
 };
 window.refreshModeCharts = function () { if (window.onMapModeChange) window.onMapModeChange(); };
 
