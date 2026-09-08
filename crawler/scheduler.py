@@ -24,7 +24,6 @@ from crawler.spiders.yantai_planning import YantaiPlanningSpider
 from crawler.spiders.yantai_bidding import YantaiBiddingSpider
 from crawler.spiders.shm_news import ShmNewsSpider
 from crawler.spiders.shandong_transport import ShandongTransportSpider
-from crawler.spiders.shandong_zbxx import ShandongZbxxSpider
 from crawler.spiders.yantai_investment import YantaiInvestmentSpider
 
 # 配置日志
@@ -40,8 +39,7 @@ SPIDERS = [
     YantaiBiddingSpider(),        # 3: 烟台公共资源交易网（70条）
     YantaiInvestmentSpider(),     # 4: 烟台投资促进中心（28条）
     ShmNewsSpider(),              # 5: 上海建工集团新闻（25条）
-    ShandongTransportSpider(),    # 6: 山东省交通运输厅（4条）
-    ShandongZbxxSpider(),         # 7: 山东省招标信息（5条）
+    ShandongTransportSpider(),    # 6: 山东省交通运输厅（新版项目库，2026-09 适配）
 ]
 
 

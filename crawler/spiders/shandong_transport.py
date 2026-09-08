@@ -95,66 +95,64 @@ class ShandongTransportSpider(BaseSpider):
         }
 
     # ============================================================
-    # 列表 API
+    # 列表页（2026-09 网站改版：旧 Servlet API 废弃 → 新版 HTML 项目库
+    #  /jssc/home/xmxx/{category}/{page}，ul#xmxx 每 li 含 项目名/建设单位/录入时间）
     # ============================================================
 
     def _fetch_api_page(
         self, category_type: str, page: int
     ) -> Optional[dict]:
         """
-        调用列表 API 获取一页数据。
+        抓取新版项目库列表页（HTML）并解析一页。
 
-        返回: {"records": [...], "total": 293, "pages": 15} 或 None
+        返回: {"records": [...], "total": N, "pages": N} 或 None
+        records 元素: {id, proCode, proname, depname, inputtime}
         """
-        resp = self._post(
-            self.API_URL,
-            data={
-                "Type": category_type,
-                "address": "",
-                "name": "",
-                "currentPage": str(page),
-            },
-            headers={
-                "Content-Type": "application/x-www-form-urlencoded",
-                "X-Requested-With": "XMLHttpRequest",
-                "Referer": f"{self.BASE_URL}/jssc/HomeShipServlet?cmd=xmxx&arg={category_type}",
-            },
-        )
-
+        url = f"{self.BASE_URL}/jssc/home/xmxx/{category_type}/{page}"
+        resp = self._get(url)
         if not resp:
             logger.error(
-                f"[{self.name}] API 请求失败 (Type={category_type}, page={page})"
+                f"[{self.name}] 列表页请求失败 (cat={category_type}, page={page})"
             )
             return None
 
-        try:
-            data = resp.json()
-        except Exception:
-            logger.error(
-                f"[{self.name}] API JSON 解析失败 (Type={category_type}, page={page})"
-            )
-            return None
+        html = resp.content.decode("utf-8", errors="replace")
+        soup = BeautifulSoup(html, "lxml")
 
-        records = data.get("data", [])
-        pagecontrol = data.get("pagecontrol", "")
+        # 分页信息：'共5969条 第1/299页 每页20条'
+        total, pages = 0, 0
+        m = re.search(r"共(\d+)条\s*第\d+/(\d+)页", html)
+        if m:
+            total, pages = int(m.group(1)), int(m.group(2))
 
-        # 从 pagecontrol HTML 提取分页信息
-        total = 0
-        pages = 0
-        m = re.search(r"共(\d+)条", pagecontrol)
-        if m:
-            total = int(m.group(1))
-        m = re.search(r"第\d+/(\d+)页", pagecontrol)
-        if m:
-            pages = int(m.group(1))
+        records = []
+        for li in soup.select("ul#xmxx li"):
+            a = li.select_one("a[href*='/homeprojectinfo/tab/']")
+            if not a:
+                continue
+            code = a["href"].rstrip("/").rsplit("/", 1)[-1]   # P0000...
+            proname = a.get_text(strip=True)
+            # 行内 div（排除项目名所在链接块）顺序: 序号|项目编号|建设单位|录入时间
+            other = [c.get_text(strip=True) for c in li.select("div")
+                     if c.select_one("a") is None]
+            depname = ""
+            inputtime = ""
+            for cell in other:
+                if re.match(r"20\d\d-\d\d-\d\d", cell):
+                    inputtime = cell[:10]
+                elif not depname and ("公司" in cell or "管理局" in cell
+                                      or "指挥部" in cell or "中心" in cell):
+                    depname = cell
+            records.append({
+                "id": code,
+                "proCode": code,
+                "proname": proname,
+                "depname": depname,
+                "inputtime": inputtime,
+            })
 
         self.stats["api_calls"] += 1
-
-        return {
-            "records": records,
-            "total": total,
-            "pages": pages,
-        }
+        return {"records": records, "total": total, "pages": pages}
 
     # ============================================================
     # 详情页抓取与解析
@@ -163,13 +161,8 @@ class ShandongTransportSpider(BaseSpider):
     def _fetch_detail(
         self, project_id: str, pro_code: str
     ) -> Optional[str]:
-        """抓取详情页 HTML。"""
-        url = (
-            f"{self.DETAIL_URL}"
-            f"?cmd=projInfoOpenTO"
-            f"&id={project_id}"
-            f"&procode={pro_code}"
-        )
+        """抓取详情页 HTML（新版 /homeprojectinfo/tab/{代码}，2026-09 改版）。"""
+        url = f"{self.BASE_URL}/jssc//homeprojectinfo/tab/{pro_code}"
 
         resp = self._get(url)
         if not resp:
@@ -367,12 +360,13 @@ class ShandongTransportSpider(BaseSpider):
         )
 
         # ============================================================
-        # Phase 1: 遍历所有类别 → 名称预筛选 → 收集候选
+        # Phase 1: 新版项目库按录入时间倒序 → 名称预筛选 → 收集候选
+        # （2026-09 改版后不再按 16 工程类别分栏，00 = 全量项目库）
         # ============================================================
         candidates: list[dict] = []  # [{id, proCode, proname, depname, inputtime, category, category_type}]
         seen_ids: set[str] = set()
 
-        category_list = list(self.CATEGORIES.items())
+        category_list = [("00", "项目库（全部类别）")]
 
         for cat_idx, (cat_type, cat_name) in enumerate(category_list, 1):
             logger.info(
@@ -398,7 +392,7 @@ class ShandongTransportSpider(BaseSpider):
                 f"[{self.name}]   API: {total} 条, {total_pages} 页"
             )
 
-            # 翻页获取剩余
+            # 翻页获取剩余（新版按录入时间倒序：整页早于截止日即停止，避免扫全库）
             if total_pages > 1:
                 for page_num in range(2, total_pages + 1):
                     self._sleep(self.REQUEST_INTERVAL)
@@ -411,6 +405,14 @@ class ShandongTransportSpider(BaseSpider):
                         continue
 
                     all_records.extend(page_data["records"])
+
+                    if page_data["records"]:
+                        dates = [r.get("inputtime", "") for r in page_data["records"]]
+                        if all(d and d < cutoff_date.isoformat() for d in dates):
+                            logger.info(
+                                f"[{self.name}]   第{page_num}页已全部早于 {cutoff_date}，停止翻页"
+                            )
+                            break
 
             self.stats["api_items"] += len(all_records)
             self.stats["categories_done"] += 1
@@ -502,13 +504,45 @@ class ShandongTransportSpider(BaseSpider):
             self._sleep(self.REQUEST_INTERVAL)
 
             html = self._fetch_detail(project_id, pro_code)
-            if not html:
-                continue
-
-            info = self._parse_detail(html)
+            info = {}
+            if html:
+                info = self._parse_detail(html)
 
             # ---- 二次确认: 项目所在地必须是烟台 ----
             location = info.get("项目所在地", "")
+            if not location:
+                # 新版详情页为前端动态加载（RuoYi），字段可能解析不到 →
+                # 降级：列表信息已含名称/建设单位（烟台关键词预筛通过），产出基础记录
+                location_hit = ""
+                for kw in self.YANTAI_KEYWORDS:
+                    if kw in (proname or "") + " " + (depname or ""):
+                        location_hit = kw
+                        break
+                results.append({
+                    "title": proname,
+                    "content": f"项目编号: {pro_code}\n建设单位: {depname or '未知'}"
+                               f"\n（新版详情页字段待适配，列表信息降级）",
+                    "source_url": f"{self.BASE_URL}/jssc//homeprojectinfo/tab/{pro_code}",
+                    "publish_date": inputtime,
+                    "relevance_score": 1,
+                    "score_detail": {"detail_fallback": 1},
+                    "district_extracted": location_hit,
+                    "scale_extracted": "",
+                    "investment_extracted": "",
+                    "project_nature": "",
+                    "project_name": proname,
+                    "project_location": location_hit,
+                    "plan_delivery_date": "",
+                    "plan_completion_date": "",
+                    "project_status": "",
+                    "tech_level": "",
+                    "construction_unit": depname,
+                    "category": cat_name,
+                    "category_type": cat_type,
+                })
+                if (idx + 1) % 10 == 0:
+                    logger.info(f"[{self.name}] [Phase2] {idx + 1}/{len(candidates)} 处理中, 已产出 {len(results)} 条")
+                continue
             if not self._is_yantai(location):
                 self.stats["skipped_not_yantai"] += 1
                 continue

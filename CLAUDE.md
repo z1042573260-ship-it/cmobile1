@@ -17,7 +17,7 @@
 │   │   ├── shandong_transport.py      # 山东省交通运输厅
 │   │   └── shandong_zbxx.py           # 山东省招标信息
 │   ├── relevance_scorer.py            # 相关性评分引擎（Layer 0/1/2 单例）
-│   └── scheduler.py                   # 自动化管线（7个工作中爬虫）
+│   └── scheduler.py                   # 自动化管线（6个工作中爬虫）
 ├── scripts/
 │   ├── test_spider.py                 # 爬虫调试入口
 │   ├── review_data.py                 # 数据审核 + Excel导出
@@ -50,7 +50,7 @@
 
 ## 爬虫清单
 
-### ✅ 正常工作（7个）
+### ✅ 正常工作（6个）
 
 | # | 爬虫名称 | 数据源 | 最新结果 | 说明 |
 |---|---------|--------|----------|------|
@@ -59,10 +59,9 @@
 | 3 | `yantai_planning` | 烟台自然资源和规划局 | 43条 | 用地/规划/工程许可 |
 | 4 | `yantai_investment` | 烟台投资促进局 | 28条 | 招商项目 |
 | 5 | `shm_news` | 上海建工集团 | 25条 | 公司新闻/项目公告 |
-| 6 | `shandong_transport` | 山东省交通运输厅 | 4条 | 交通工程招标 |
-| 7 | `shandong_zbxx` | 山东省招标信息 | 5条 | 省级招标公告 |
+| 6 | `shandong_transport` | 山东省交通运输厅 | 新版项目库 | **2026-09 改版已适配**：解析 /jssc/home/xmxx/00/{page} HTML（录入时间倒序早停+烟台名称预筛+详情降级基础记录） |
 
-### ❌ 失效（4个）
+### ❌ 失效（5个）
 
 | # | 爬虫名称 | 原因 | 原网址 |
 |---|---------|------|--------|
@@ -70,6 +69,7 @@
 | 2 | `shandong_approval` | 山东省审批平台改版 | https://tzxm.shandong.gov.cn/ |
 | 3 | `yantai_epb` | 烟台生态环境局网站改版 | https://hbj.yantai.gov.cn/ |
 | 4 | `ybb` | 云办公平台接口失效 | https://www.ybb.com/ |
+| 5 | `shandong_zbxx` | **2026-09 省交通厅整站改版**（旧 Servlet API→RuoYi），招标栏目前端动态加载，逆向成本高暂失效 | https://jtt.shandong.gov.cn/ |
 
 ## 核心脚本
 
@@ -171,7 +171,7 @@ python scripts/review_data.py <JSON文件> --approve      # 批量写入数据�
 ```
 Layer 1: 采集       Layer 2: 汇总         Layer 3: 分析            Layer 4: 输出
 
-7个爬虫              aggregate.py         ai_pipeline.py          JSON → 前端大屏
+6个爬虫              aggregate.py         ai_pipeline.py          JSON → 前端大屏
   ↓                   收集（不去重）       统一AI深度推理            DB → 持久存储
 spider.run()          ↓                   一次调用输出:            Excel → 人工审核
   ↓                  merged.json           基站需求 + 商机情报      Email → 邮件通知
@@ -216,7 +216,7 @@ python scripts/run_pipeline.py --from-json "data/spider_test/yantai_districts_me
 python scripts/run_pipeline.py --from-json "data/spider_test/*.json" --from-excel "data/spider_test/*审核表*.xlsx"
 ```
 
-7个爬虫按优先级顺序执行：
+6个爬虫按优先级顺序执行：
 
 ```
 YantaiDistrictsSpider      # 1: 烟台13区县政府公告（466条，主力）
@@ -225,7 +225,6 @@ YantaiBiddingSpider        # 3: 施工招标（70条）
 YantaiInvestmentSpider     # 4: 招商项目（28条）
 ShmNewsSpider              # 5: 上海建工集团新闻（25条）
 ShandongTransportSpider    # 6: 山东省交通运输厅（4条）
-ShandongZbxxSpider         # 7: 山东省招标信息（5条）
 ```
 
 ## 已完成的代码整理（2026-07-24）

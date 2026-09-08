@@ -35,7 +35,6 @@ SPIDERS = {
     "yantai_bidding": YantaiBiddingSpider(),
     "yantai_investment": YantaiInvestmentSpider(),
     "shandong_transport": ShandongTransportSpider(),
-    "shandong_zbxx": ShandongZbxxSpider(),
     "yantai_districts": YantaiDistrictsSpider(),
 }
 
@@ -45,6 +44,8 @@ DISABLED_SPIDERS = {
     "shandong_approval": ShandongApprovalSpider(),
     "yantai_epb": YantaiEPBSpider(),
     "ybb": YBBSpider(),
+    # 2026-09 山东省交通厅整站改版（旧 Servlet API→RuoYi 新站），zbxx 招标栏目为前端动态加载，逆向成本高暂失效
+    "shandong_zbxx": ShandongZbxxSpider(),
 }
 
 OUTPUT_DIR = Path(__file__).resolve().parent.parent / "data" / "spider_test"
