@@ -6,6 +6,8 @@
 #   config/settings.py 的 load_dotenv 会自动读取 .env 文件 → 无需 Gitee 变量注入
 #   GITHUB_PUSH_TOKEN 例外：GitHub PAT（ghp_ 开头）会被 GitHub Push Protection 判定为
 #   密钥泄露拦截 → 存 Gitee 仓库变量（下方 variables 声明注入），不写进任何仓库文件
+# 【大屏同步】跑完用 scripts/sync_dashboard_to_github.py（GitHub Contents API）写文件，
+#   不用 git push —— 两仓库历史分叉会必然被拒（2026-09-10 实测 ! [rejected]）
 # ============================================================
 version: '1.0'
 name: weekly-pipeline
@@ -38,12 +40,10 @@ stages:
           - test -f .env && echo "OK .env 存在" || echo "FAIL .env 缺失"
           - grep -q '^TIDB_DATABASE_URL=.' .env && echo "OK TIDB_DATABASE_URL 有值" || echo "FAIL TIDB 为空"
           - python3 crawler/scheduler.py
-          # 落仓：大屏数据 + AI 断点 push 给 GitHub（GitHub Pages 大屏即更新）；
-          # 数据已入 TiDB，push 失败不中断流水线（远端有新提交时下次再同步）
-          - git config user.email "pipeline@cmobile1.local"
-          - git config user.name "gitee-pipeline"
-          - git add frontend/data/dashboard_data.json frontend/data/report_data.json frontend/data/workbuddy.json data/unified_intelligence.checkpoint.json
-          - git diff --cached --quiet || git commit -m "chore(data): 自动更新大屏数据（Gitee 跑完推 GitHub）$(date '+%Y-%m-%d %H:%M')"
-          # 令牌从 Gitee 仓库变量注入（不写进仓库文件，避免 GitHub Push Protection 拦截）
-          - TOKEN="${GITHUB_PUSH_TOKEN}"
-          - test -n "$TOKEN" && git push "https://z1042573260-ship-it:${TOKEN}@github.com/z1042573260-ship-it/cmobile1.git" HEAD:main || echo "PUSH_SKIP 无令牌/远端有新提交，数据已在 TiDB，下次同步"
+          # 大屏数据同步给 GitHub（GitHub Pages 自动更新）
+          # 【为什么不用 git push】GitHub 与 Gitee 两仓库历史分叉（内容相同、commit hash 不同），
+          #   从 Gitee 容器 push 必然 `! [rejected] (fetch first)`；且 data/ 在 .gitignore 里，
+          #   `git add data/xxx.checkpoint.json` 会整条失败。
+          # 改用 GitHub Contents API 直接写文件内容（自动基于远端 HEAD 建提交）→ 永不冲突。
+          # 令牌 GITHUB_PUSH_TOKEN 来自 Gitee 仓库变量；同步失败不中断流水线（数据已在 TiDB）
+          - python3 scripts/sync_dashboard_to_github.py || echo "SYNC_SKIP 同步失败，数据已在 TiDB"
