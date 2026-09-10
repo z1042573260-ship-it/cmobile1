@@ -4,8 +4,8 @@
 #
 # 【密钥方案】仓库根目录 .env.ci（从本地 .env 复制，仓库已设为私有）
 #   config/settings.py 的 load_dotenv 会自动读取 .env 文件 → 无需 Gitee 变量注入
-#   密钥不进 workflow、不依赖 Gitee 变量系统（社区版变量注入不生效）
-#   GITEE_PUSH_TOKEN 用于把大屏数据 push 回仓库（Gitee Go 无内置凭据）
+#   GITHUB_PUSH_TOKEN 例外：GitHub PAT（ghp_ 开头）会被 GitHub Push Protection 判定为
+#   密钥泄露拦截 → 存 Gitee 仓库变量（下方 variables 声明注入），不写进任何仓库文件
 # ============================================================
 version: '1.0'
 name: weekly-pipeline
@@ -15,6 +15,10 @@ triggers:
   schedule:
     # 北京时间每周一 09:15（Gitee cron: 秒 分 时 日 月 星期(1=周日) 年；周一=2）
     - cron: '0 15 9 ? * 2 *'
+variables:
+  # Gitee 仓库变量声明（不在此声明则不会注入构建环境，官方行为）
+  global:
+    - GITHUB_PUSH_TOKEN   # Gitee 个人设置→仓库变量 配置；值=GitHub PAT（勾 repo）
 stages:
   - name: pipeline
     displayName: 运行完整管线
@@ -40,5 +44,6 @@ stages:
           - git config user.name "gitee-pipeline"
           - git add frontend/data/dashboard_data.json frontend/data/report_data.json frontend/data/workbuddy.json data/unified_intelligence.checkpoint.json
           - git diff --cached --quiet || git commit -m "chore(data): 自动更新大屏数据（Gitee 跑完推 GitHub）$(date '+%Y-%m-%d %H:%M')"
-          - TOKEN=$(grep '^GITHUB_PUSH_TOKEN=' .env | cut -d= -f2-)
+          # 令牌从 Gitee 仓库变量注入（不写进仓库文件，避免 GitHub Push Protection 拦截）
+          - TOKEN="${GITHUB_PUSH_TOKEN}"
           - test -n "$TOKEN" && git push "https://z1042573260-ship-it:${TOKEN}@github.com/z1042573260-ship-it/cmobile1.git" HEAD:main || echo "PUSH_SKIP 无令牌/远端有新提交，数据已在 TiDB，下次同步"
