@@ -5,10 +5,11 @@
 # 【密钥方案】仓库根目录 .env.ci（从本地 .env 复制，仓库已设为私有）
 #   config/settings.py 的 load_dotenv 会自动读取 .env 文件 → 无需 Gitee 变量注入
 #   密钥不进 workflow、不依赖 Gitee 变量系统（社区版变量注入不生效）
+#   GITEE_PUSH_TOKEN 用于把大屏数据 push 回仓库（Gitee Go 无内置凭据）
 # ============================================================
 version: '1.0'
 name: weekly-pipeline
-displayName: 每周自动化管线（爬虫→AI→坐标→入库→导出→邮件）
+displayName: 每周自动化管线（爬虫→AI→坐标→入库→导出→邮件→落仓）
 triggers:
   trigger: auto
   schedule:
@@ -33,3 +34,10 @@ stages:
           - test -f .env && echo "OK .env 存在" || echo "FAIL .env 缺失"
           - grep -q '^TIDB_DATABASE_URL=.' .env && echo "OK TIDB_DATABASE_URL 有值" || echo "FAIL TIDB 为空"
           - python3 crawler/scheduler.py
+          # 落仓：大屏数据 + AI 断点 push 回 Gitee（数据已入 TiDB，push 失败不中断，下次再同步）
+          - git config user.email "pipeline@cmobile1.local"
+          - git config user.name "gitee-pipeline"
+          - git add frontend/data/dashboard_data.json frontend/data/report_data.json frontend/data/workbuddy.json data/unified_intelligence.checkpoint.json
+          - git diff --cached --quiet || git commit -m "chore(data): 自动更新大屏数据（Gitee）$(date '+%Y-%m-%d %H:%M')"
+          - TOKEN=$(grep '^GITEE_PUSH_TOKEN=' .env | cut -d= -f2-)
+          - test -n "$TOKEN" && git push "https://zc9658:${TOKEN}@gitee.com/zc9658/cmobile1.git" HEAD:main || echo "PUSH_SKIP 无令牌或远端并发冲突，数据已在 TiDB，下次同步"
