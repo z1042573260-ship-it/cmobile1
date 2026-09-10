@@ -22,11 +22,14 @@ THINKING_BUDGET = None
 class DoubaoClient:
     """豆包 API 客户端（含累计 token 计数器，用于监控 500 万免费额度）"""
 
-    def __init__(self, api_key: str = None, model: str = None):
+    def __init__(self, api_key: str = None, model: str = None,
+                 base_url: str = None, extra_body: dict = None):
         self.api_key = api_key or ZHIPU_API_KEY
-        self.base_url = ZHIPU_BASE_URL
+        self.base_url = base_url or ZHIPU_BASE_URL
         self.endpoint = f"{self.base_url}/chat/completions"
         self.model = model or ZHIPU_MODEL
+        # 实例级附加请求体（如 GLM-5.x 关思考：{"thinking": {"type": "disabled"}}）
+        self.extra_body = extra_body or {}
         # 创建 session 绕过系统代理（与爬虫一致）
         self.session = requests.Session()
         self.session.trust_env = False
@@ -103,9 +106,14 @@ class DoubaoClient:
                 "token_budget": THINKING_BUDGET,
             }
 
-        # 智谱模型偶发 429 限流 / 超时 → 指数退避重试（429 等待更长：10/20/40/80/160s）
+        # 实例级附加参数（覆盖上方的思考设置，如 {"thinking": {"type": "disabled"}}）
+        if self.extra_body:
+            payload.update(self.extra_body)
+
+        # 智谱模型偶发 429 限流 / 超时 / 中转 400 → 退避重试（429 等待更长：一个限流窗口）
         max_retries = 5
         for attempt in range(max_retries):
+            resp = None
             try:
                 resp = self.session.post(
                     self.endpoint,
@@ -124,11 +132,18 @@ class DoubaoClient:
                 logger.error("智谱 API 请求超时")
                 return None
             except requests.RequestException as e:
-                if attempt < max_retries - 1 and resp is not None and resp.status_code == 429:
-                    # 账户级 RPM≈1/分钟：指数退避会在同一窗口内反复撞墙，
-                    # 固定等待 70s（一个限流窗口）后重试，越过窗口下次必成功
-                    wait = 70
-                    logger.warning(f"智谱 API 限流(429)，固定等待 {wait}s 后重试 ({attempt+1}/{max_retries})")
+                if attempt < max_retries - 1:
+                    status = resp.status_code if resp is not None else None
+                    if status == 429:
+                        # 账户级 RPM≈1/分钟：指数退避会在同一窗口内反复撞墙，
+                        # 固定等待 70s（一个限流窗口）后重试，越过窗口下次必成功
+                        wait, why = 70, '限流(429)'
+                    elif status is not None and status >= 400:
+                        # 中转网关偶发 400/5xx（多上游路由，同请求可间歇性被拒）→ 短退避重试
+                        wait, why = 2 * (attempt + 1), f'HTTP {status}'
+                    else:
+                        wait, why = 2 ** attempt, '网络异常'
+                    logger.warning(f"API 请求失败({why})，{wait}s 后重试 ({attempt+1}/{max_retries}): {e}")
                     time.sleep(wait)
                     continue
                 logger.error(f"智谱 API 请求失败: {e}")
@@ -194,21 +209,50 @@ class DoubaoClient:
         if not response:
             return None
 
-        # 尝试从回复中提取 JSON
-        try:
-            # 尝试直接解析
-            return json.loads(response)
-        except json.JSONDecodeError:
-            # 尝试从 markdown 代码块中提取
-            import re
-            json_match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', response)
-            if json_match:
+        import re
+
+        # 剥离思考块：GLM-5.x 思考模式会先输出 <think>…</think> 草稿（草稿里可能含示例 JSON，
+        # 必须先整体去掉，否则会解析到思考内容）。取最后一个 </think> 之后的部分最稳。
+        body = response
+        if '</think>' in body:
+            body = body[body.rfind('</think>') + len('</think>'):]
+        body = re.sub(r'<think[^>]*>[\s\S]*?</think>', '', body).strip()   # 兼容多段 think
+        if not body:
+            body = response.strip()
+
+        def _extract_json(text):
+            text = text.strip()
+            try:
+                return json.loads(text)
+            except json.JSONDecodeError:
+                pass
+            m = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', text)
+            if m:
                 try:
-                    return json.loads(json_match.group(1))
+                    return json.loads(m.group(1).strip())
                 except json.JSONDecodeError:
                     pass
-            logger.warning(f"无法从豆包回复中解析 JSON: {response[:200]}")
+            # raw_decode：从首个 { 解析到第一个完整 JSON 对象结束（容忍尾部多余文本/围栏残留）
+            i = text.find('{')
+            if i >= 0:
+                try:
+                    obj, _ = json.JSONDecoder().raw_decode(text[i:])
+                    return obj
+                except json.JSONDecodeError:
+                    pass
+                j = text.rfind('}')
+                if j > i:
+                    try:
+                        return json.loads(text[i:j + 1])
+                    except json.JSONDecodeError:
+                        pass
             return None
+
+        parsed = _extract_json(body)
+        if parsed is not None:
+            return parsed
+        logger.warning(f"无法从豆包回复中解析 JSON: {response[:200]}")
+        return None
 
 
 # 全局单例

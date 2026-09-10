@@ -47,6 +47,13 @@ ZHIPU_API_KEY = os.getenv("ZHIPU_API_KEY", "")
 ZHIPU_BASE_URL = "https://open.bigmodel.cn/api/paas/v4"
 ZHIPU_MODEL = "glm-4-flash"  # 免费且实测质量最稳（4.7 余额不足；4.5-air 长 prompt 模板化；4.7-flash 思考草稿）
 
+# ===== GLM-5.2（主力模型，OpenAI 兼容中转；失败自动降级到 glm-4-flash 保底）=====
+# AI_PRIMARY: 置 "glm-5.2" 启用主力（需同时配 OPENAI_API_KEY）；留空=全部走 glm-4-flash
+AI_PRIMARY = os.getenv("AI_PRIMARY", "")            # 例：glm-5.2
+GLM52_API_KEY = os.getenv("OPENAI_API_KEY", "")
+GLM52_BASE_URL = os.getenv("GLM52_BASE_URL", "https://virex.virexstar.com/v1")
+GLM52_MODEL = os.getenv("GLM52_MODEL", "glm-5.2")
+
 # ===== 讯飞星火（免费 + 联网搜索，坐标补全用）=====
 XFYUN_API_KEY = os.getenv("XFYUN_API_KEY", "")     # xinghuo.xfyun.cn，走 .env
 XFYUN_API_SECRET = os.getenv("XFYUN_API_SECRET", "")

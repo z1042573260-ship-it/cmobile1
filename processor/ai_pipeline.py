@@ -37,7 +37,7 @@ from typing import Optional
 import pandas as pd
 from loguru import logger
 
-from processor.doubao_client import doubao
+from processor.doubao_client import doubao, DoubaoClient
 from config.settings import YANTAI_DISTRICTS
 
 
@@ -453,6 +453,44 @@ def build_user_message(title: str, content: str, publish_date: str,
 - 直接返回 JSON，不要解释文字"""
 
 
+# ==============================================================================
+# 主力 / 保底模型链（GLM-5.2 主力 → glm-4-flash 保底）
+# 实测：5.2 字段更全（11/11，含经纬度/工程量/施工工艺细节）、判定更准（正确剔除媒体宣传稿）；
+# 但中转偶发 400/403/空返回 → 失败时自动降级 4flash（智谱官方，无限流，带联网搜索）不丢数据。
+# 注意：5.2 的 skip（一票否决）是真实判断（带完整推理链），不触发降级。
+# ==============================================================================
+_primary_client = None
+_primary_inited = False
+
+
+def _get_primary_client():
+    """主力模型 client（settings.AI_PRIMARY='glm-5.2' 且配了 key 时启用；否则 None=全走 4flash）"""
+    global _primary_client, _primary_inited
+    if not _primary_inited:
+        _primary_inited = True
+        from config.settings import AI_PRIMARY, GLM52_API_KEY, GLM52_BASE_URL, GLM52_MODEL
+        if AI_PRIMARY and GLM52_API_KEY:
+            _primary_client = DoubaoClient(api_key=GLM52_API_KEY, model=GLM52_MODEL,
+                                           base_url=GLM52_BASE_URL)
+            logger.info(f"[AI] 主力模型 {GLM52_MODEL} @ {GLM52_BASE_URL}（失败自动降级 {doubao.model}）")
+        else:
+            logger.info(f"[AI] 未启用主力模型（AI_PRIMARY={AI_PRIMARY or '空'}），使用 {doubao.model}")
+    return _primary_client
+
+
+def _chat_with_fallback(system_prompt: str, user_message: str):
+    """主力优先（保留思考、不带智谱联网参数）→ 空/异常 → 保底 4flash（带联网搜索）"""
+    primary = _get_primary_client()
+    if primary is not None:
+        res = primary.chat_json(system_prompt=system_prompt, user_message=user_message,
+                                temperature=0.0, max_tokens=8192, enable_web_search=False)
+        if res:
+            return res
+        logger.warning(f"[AI] 主力 {primary.model} 未返回结果 → 降级 {doubao.model} 保底重试")
+    return doubao.chat_json(system_prompt=system_prompt, user_message=user_message,
+                            temperature=0.0, max_tokens=8192, enable_web_search=True)
+
+
 def analyze_project(title: str, content: str, publish_date: str,
                     source_url: str, source_name: str) -> Optional[dict]:
     """
@@ -481,13 +519,7 @@ def analyze_project(title: str, content: str, publish_date: str,
     )
 
     try:
-        result = doubao.chat_json(
-            system_prompt=system_prompt,
-            user_message=user_msg,
-            temperature=0.0,
-            max_tokens=8192,
-            enable_web_search=True,   # 智谱联网搜索
-        )
+        result = _chat_with_fallback(system_prompt, user_msg)   # 主力 5.2 → 保底 4flash
     except Exception as e:
         logger.error(f"AI API 调用失败 [{title[:40]}]: {e}")
         return None

@@ -303,6 +303,22 @@ ShandongTransportSpider    # 6: 山东省交通运输厅（4条）
 
 爬虫使用 `START_DATE = "2026-05-01"` 作为最早爬取日期。所有早于此日期的公告会被跳过。
 
+**环境变量覆盖（2026-09-10 新增）**：`export CRAWL_START_DATE=2026-08-27` 可让整条管线从指定日期起爬
+（`base_spider.get_cutoff_date` 优先读取，CI/一次性补跑用，无需改爬虫常量）。本地：
+`CRAWL_START_DATE=2026-08-27 python scripts/test_spider.py all`。
+
+## AI 主力 / 保底模型链（2026-09-10）
+
+- **主力 GLM-5.2**（OpenAI 兼容中转，思考模式保留）：字段更全（含经纬度/工程量/施工工艺）、判定更准
+  （正确剔除媒体宣传稿类"假红警"）；实测 11/11 字段 vs 4flash 9/11，但单条约 2-4 倍耗时
+- **保底 GLM-4-flash**（智谱官方，带联网搜索）：主力空返回/400/403/连接失败时自动降级重跑该条
+- 配置（`.env` / `.env.ci`）：`AI_PRIMARY=glm-5.2` + `OPENAI_API_KEY` + `GLM52_BASE_URL` + `GLM52_MODEL`
+  - 不配 `AI_PRIMARY` → 全部走 glm-4-flash（原行为）
+  - GitHub Actions 需在 Secrets 补 `OPENAI_API_KEY` 才能同样启用（未配则自动回退 4flash）
+- 实测注意：中转偶发 400/403（高频触发 403 封禁）→ 客户端已加退避重试 + 降级；
+  5.2 的"一票否决 skip"带完整推理链，是真实判断，**不触发降级**
+- 对比脚本：`python scripts/_glm_compare.py --from-json "..." --limit 8 [--only glm51]`
+
 ## 环境要求
 
 - Python 3.7+
