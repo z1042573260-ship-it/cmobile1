@@ -5,7 +5,6 @@
 """
 from __future__ import annotations
 
-import os
 import re
 import time
 import random
@@ -53,22 +52,14 @@ class BaseSpider(ABC):
         计算爬取截止日期。
 
         规则：
-          1. CRAWL_START_DATE 环境变量 — CI/一次性补跑用（如 export CRAWL_START_DATE=2026-08-27
-             让整条管线从指定日期起爬，无需改各爬虫常量）；优先级最高
-          2. SEARCH_DAYS — 日常增量窗口（相对日期）
-          3. START_DATE — 首次全量起点（绝对日期）
-        取更早者，确保首次全量+后续增量都能覆盖。
+          1. SEARCH_DAYS — 日常增量窗口（相对日期）
+          2. START_DATE — 首次全量起点（绝对日期）
+          取两者中更早的日期，确保首次全量+后续增量都能覆盖。
 
         用法：
           子类在 crawl() 中调用 cutoff = self.get_cutoff_date()
           然后遍历文章时 if art_date < cutoff: break
         """
-        env_start = os.getenv("CRAWL_START_DATE", "").strip()
-        if env_start:
-            try:
-                return datetime.datetime.strptime(env_start, "%Y-%m-%d").date()
-            except ValueError:
-                logger.warning(f"[base_spider] CRAWL_START_DATE 格式错误，忽略: {env_start}")
         cutoff_by_days = datetime.date.today() - datetime.timedelta(
             days=self.SEARCH_DAYS
         )

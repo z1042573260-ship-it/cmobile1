@@ -51,7 +51,7 @@ class YantaiDistrictsSpider(BaseSpider):
     # ---- 过滤配置 ----
     MIN_SCORE = 1            # 政府公告词汇与招标不同，低阈值
     SEARCH_DAYS = 7          # 每周增量：只爬最近7天（首次全量时设 START_DATE 绝对起点）
-    START_DATE = ""          # 首次全量起点，如 "2026-05-01"；自动化增量模式置空
+    START_DATE = "2026-08-27"  # 一次性补跑（2026-09-10 用户：本次要跑到 9.10）：从 8.27 起爬；补跑完成后置回 ""
     END_DATE = None          # 最晚日期（None=不限制；如 "2026-08-13" 只抓到该日）
 
     # ---- 请求控制 ----

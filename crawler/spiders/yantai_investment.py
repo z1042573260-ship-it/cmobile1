@@ -63,7 +63,7 @@ class YantaiInvestmentSpider(BaseSpider):
     # ---- 过滤配置 ----
     MIN_SCORE = 0       # 招商项目全部相关（投资加分后区分质量）
     SEARCH_DAYS = 7     # 每周增量：只爬最近7天（首次全量时设 START_DATE 绝对起点）
-    START_DATE = ""     # 首次全量起点，如 "2026-01-01"；自动化增量模式置空
+    START_DATE = "2026-08-27"  # 一次性补跑（2026-09-10 用户：本次要跑到 9.10）：从 8.27 起爬；补跑完成后置回 ""
     PRE_FILTER = False  # 详情获取前不按标题评分过滤（招商项目用词与招标不同）
 
     def __init__(self):

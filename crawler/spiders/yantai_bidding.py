@@ -44,6 +44,7 @@ class YantaiBiddingSpider(BaseSpider):
 
     # 搜索天数（最近N天）
     SEARCH_DAYS = 7          # 每周增量：只爬最近7天
+    START_DATE = "2026-08-27"  # 一次性补跑（2026-09-10 用户：本次要跑到 9.10）：从 8.27 起爬；补跑完成后置回 ""
 
     def __init__(self):
         super().__init__()

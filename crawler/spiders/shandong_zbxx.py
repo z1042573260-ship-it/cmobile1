@@ -42,7 +42,7 @@ class ShandongZbxxSpider(BaseSpider):
 
     # ---- 过滤配置 ----
     SEARCH_DAYS = 7   # 每周增量：只爬最近7天
-    START_DATE = ""   # 数据起始日期（置空=用 SEARCH_DAYS 每周增量窗口；首次全量时设绝对日期）
+    START_DATE = "2026-08-27"  # 一次性补跑（2026-09-10 用户：本次要跑到 9.10）：从 8.27 起爬；补跑完成后置回 ""
     PAGE_SIZE = 40             # 每页条数（最大值）
     REQUEST_INTERVAL = 3       # 请求间隔（秒）
 

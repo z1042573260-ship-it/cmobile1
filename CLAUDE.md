@@ -303,9 +303,10 @@ ShandongTransportSpider    # 6: 山东省交通运输厅（4条）
 
 爬虫使用 `START_DATE = "2026-05-01"` 作为最早爬取日期。所有早于此日期的公告会被跳过。
 
-**环境变量覆盖（2026-09-10 新增）**：`export CRAWL_START_DATE=2026-08-27` 可让整条管线从指定日期起爬
-（`base_spider.get_cutoff_date` 优先读取，CI/一次性补跑用，无需改爬虫常量）。本地：
-`CRAWL_START_DATE=2026-08-27 python scripts/test_spider.py all`。
+**一次性补跑（用各爬虫的 START_DATE 常量）**：把爬虫类里的 `START_DATE` 设为起点日期（如 `"2026-08-27"`）
+即从该日起爬；补跑完成后置回 `""` 恢复每周 7 天增量窗口。
+- 2026-09-10 已把 7 个爬虫全部设为 `"2026-08-27"`（本次要补 8.27→9.10 数据；**补跑完成后需置回空**）
+- 本地单测不改常量：`python scripts/test_spider.py yantai_districts --start-date 2026-08-27`
 
 ## AI 主力 / 保底模型链（2026-09-10）
 

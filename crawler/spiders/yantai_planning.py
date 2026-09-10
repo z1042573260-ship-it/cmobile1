@@ -61,6 +61,7 @@ class YantaiPlanningSpider(BaseSpider):
     # ---- 过滤配置 ----
     MIN_SCORE = 1       # 规划许可 = 强信号，低阈值
     SEARCH_DAYS = 7     # 每周增量：只爬最近7天
+    START_DATE = "2026-08-27"  # 一次性补跑（2026-09-10 用户：本次要跑到 9.10）：从 8.27 起爬；补跑完成后置回 ""
 
     def __init__(self):
         super().__init__()
